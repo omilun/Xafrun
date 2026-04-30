@@ -3,10 +3,9 @@ package models
 type NodeType string
 
 const (
-	NodeSource         NodeType = "Source"
-	NodeKustomization  NodeType = "Kustomization"
-	NodeHelmRelease    NodeType = "HelmRelease"
-	NodeK8sResource    NodeType = "K8sResource"
+	NodeSource        NodeType = "Source"
+	NodeKustomization NodeType = "Kustomization"
+	NodeHelmRelease   NodeType = "HelmRelease"
 )
 
 type HealthStatus string
@@ -25,8 +24,11 @@ type Node struct {
 	Namespace string       `json:"namespace"`
 	Kind      string       `json:"kind"`
 	Status    HealthStatus `json:"status"`
-	Message   string       `json:"message"`
-	Inventory []string     `json:"inventory,omitempty"`
+	Message   string       `json:"message,omitempty"`
+	// Flux-specific details
+	SourceRef  string   `json:"sourceRef,omitempty"`  // e.g. "GitRepository/flux-system"
+	Revision   string   `json:"revision,omitempty"`   // last applied revision / commit
+	Inventory  []string `json:"inventory,omitempty"`  // managed object IDs
 }
 
 type Edge struct {

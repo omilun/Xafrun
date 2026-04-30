@@ -31,12 +31,12 @@ const TypeIcon = ({ type }: { type: string }) => {
 
 const ResourceNode = ({ data }: { data: FluxNode }) => {
   return (
-    <div className={`px-4 py-3 shadow-lg rounded-lg border-2 bg-white min-w-[200px] ${
-      data.status === 'Healthy' ? 'border-green-100' : 
+    <div className={`px-4 py-3 shadow-lg rounded-lg border-2 bg-white min-w-[220px] max-w-[280px] ${
+      data.status === 'Healthy' ? 'border-green-100' :
       data.status === 'Unhealthy' ? 'border-red-100' : 'border-blue-100'
     }`}>
       <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-gray-300" />
-      
+
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <div className="p-1.5 bg-gray-50 rounded">
@@ -47,10 +47,30 @@ const ResourceNode = ({ data }: { data: FluxNode }) => {
         <HealthIcon status={data.status} />
       </div>
 
-      <div className="flex flex-col">
+      <div className="flex flex-col gap-0.5">
         <span className="text-sm font-semibold text-gray-800 truncate">{data.name}</span>
         <span className="text-[10px] text-gray-500 font-mono">{data.namespace}</span>
       </div>
+
+      {data.sourceRef && (
+        <div className="mt-2 pt-2 border-t border-gray-50">
+          <span className="text-[9px] text-gray-400 uppercase font-bold tracking-tight">Source: </span>
+          <span className="text-[9px] text-gray-500 font-mono truncate">{data.sourceRef}</span>
+        </div>
+      )}
+
+      {data.revision && (
+        <div className="mt-1">
+          <span className="text-[9px] text-gray-400 uppercase font-bold tracking-tight">Rev: </span>
+          <span className="text-[9px] text-gray-500 font-mono truncate">{data.revision}</span>
+        </div>
+      )}
+
+      {data.message && data.status !== 'Healthy' && (
+        <div className="mt-1">
+          <span className="text-[9px] text-red-400 italic leading-tight line-clamp-2">{data.message}</span>
+        </div>
+      )}
 
       {data.inventory && data.inventory.length > 0 && (
         <div className="mt-2 pt-2 border-t border-gray-50">
@@ -66,3 +86,4 @@ const ResourceNode = ({ data }: { data: FluxNode }) => {
 };
 
 export default memo(ResourceNode);
+

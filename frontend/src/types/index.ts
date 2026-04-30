@@ -9,6 +9,8 @@ export interface FluxNode {
   kind: string;
   status: HealthStatus;
   message?: string;
+  sourceRef?: string;
+  revision?: string;
   inventory?: string[];
 }
 
