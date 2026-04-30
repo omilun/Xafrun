@@ -1,0 +1,54 @@
+# Fluxbaan: Design & Implementation Plan 🗺️
+
+## 1. The Problem Statement
+**"The Flux UI Paradox"**
+Flux CD is a world-class GitOps engine, but its visibility is fragmented. Unlike Argo CD, which provides a cohesive visual "Resource Tree," Flux users are forced to choose between:
+- **CLI-only visibility:** Great for power users, but hard for "at-a-glance" auditing.
+- **General Dashboards (Headlamp/Lens):** Overloaded with non-GitOps cluster noise.
+- **Fragmented UIs:** Existing tools often focus on lists rather than the **logical-to-physical mapping** (Source -> Kustomization -> Pods).
+
+## 2. The Vision
+**Fluxbaan** (Flux + Kanban/Workflow) aims to be the missing "visual bridge" for Flux CD. It visualizes the entire GitOps lifecycle in an interactive graph, showing not just *if* something is synced, but *what* physical resources were created as a result.
+
+## 3. Technical Architecture
+
+### Frontend: Next.js + React Flow
+- **Framework:** Next.js 15 (App Router) for a modern, fast SSR-capable UI.
+- **Visualization:** **React Flow** for the node-based interactive dependency tree.
+- **State Management:** **TanStack Query** for efficient caching and real-time polling.
+- **Styling:** Tailwind CSS for a clean, professional "Argo-inspired" aesthetic.
+
+### Backend: Golang
+- **Engine:** High-performance Go binary using `client-go` and `controller-runtime`.
+- **API:** Gin-based REST API providing the graph structure to the frontend.
+- **Watcher Logic:** Uses K8s Informers to track Flux CRDs (`Kustomizations`, `HelmReleases`, `GitRepositories`) and their managed resources (Deployments, Services, etc.).
+
+### Database: CloudNativePG (CNPG)
+- **Choice:** **PostgreSQL** via the **CloudNativePG** operator (already present in the Talos-on-macos cluster).
+- **Purpose:** 
+    - **History Tracking:** Move beyond "current state." Store a historical record of every reconciliation event.
+    - **Auditing:** See exactly when a `Kustomization` changed from `Ready` to `Failed` and what the error message was at that time.
+    - **Performance:** Cache complex graph relationships to reduce API load on the cluster for historical views.
+
+## 4. Implementation Roadmap
+
+### Phase 1: Real-time Visualizer (Completed ✅)
+- [x] Scaffold Go Backend with Flux API support.
+- [x] Scaffold Next.js Frontend with React Flow.
+- [x] Implement "Tree Logic" (Source -> KS/HR mapping).
+- [x] Initial Dockerization and CI (Argo Workflows).
+
+### Phase 2: Persistence & History (Next 🛠️)
+- [ ] **Database Schema:** Define tables for `reconciliation_history`, `resource_snapshots`, and `events`.
+- [ ] **CNPG Integration:** Add a PostgreSQL `Cluster` manifest to the GitOps repo.
+- [ ] **GORM Integration:** Update the Go backend to persist every Flux status change to the DB.
+- [ ] **Frontend Timeline:** Add a "History" sidebar to the UI to browse past reconciliations.
+
+### Phase 3: Advanced Features
+- [ ] **Log Streaming:** Directly stream Pod logs from the node side-drawer.
+- [ ] **Diff View:** Show the YAML diff between what's in Git and what's in the Cluster.
+- [ ] **Multi-cluster:** Support for aggregating Flux state from multiple remote clusters.
+
+---
+**Created by:** Omilun
+**Date:** May 2026
