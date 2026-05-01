@@ -16,12 +16,6 @@ const HEALTH_BORDER: Record<HealthStatus, string> = {
   Unknown:     'border-l-slate-300',
 };
 
-const HEALTH_BG: Record<HealthStatus, string> = {
-  Healthy:     'bg-green-50 dark:bg-green-950/10',
-  Unhealthy:   'bg-red-50 dark:bg-red-950/10',
-  Progressing: 'bg-blue-50 dark:bg-blue-950/10',
-  Unknown:     'bg-slate-50 dark:bg-slate-950/10',
-};
 
 const KIND_BADGE: Record<string, string> = {
   Kustomization: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',

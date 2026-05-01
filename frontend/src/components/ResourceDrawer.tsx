@@ -5,7 +5,7 @@ import {
   X, RefreshCcw, PauseCircle, PlayCircle,
   AlertTriangle, CheckCircle2, Loader2, Clock,
 } from 'lucide-react';
-import { FluxNode, FluxEdge, HealthStatus, InventoryItem, K8sEvent } from '@/types';
+import { FluxNode, HealthStatus, InventoryItem, K8sEvent } from '@/types';
 import { reconcile, suspend, resume, fetchYaml, fetchK8sEvents } from '@/lib/api';
 import { useToast } from './Toast';
 
@@ -41,21 +41,19 @@ function HealthBadge({ status }: { status: HealthStatus }) {
 }
 
 // ─── YAML Tab ─────────────────────────────────────────────────────────────────
-function YamlTab({ kind, namespace, name }: { kind: string; namespace: string; name: string }) {
+// Rendered with a key prop that changes on resource change → fresh state on each resource
+function YamlTabInner({ kind, namespace, name }: { kind: string; namespace: string; name: string }) {
   const [yaml, setYaml] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
     fetchYaml(kind, namespace, name)
       .then(setYaml)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [kind, namespace, name]);
+      .catch((e: Error) => setError(e.message));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  if (loading) return (
+  if (yaml === null && error === null) return (
     <div className="flex items-center justify-center h-32">
       <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
     </div>
@@ -74,22 +72,23 @@ function YamlTab({ kind, namespace, name }: { kind: string; namespace: string; n
   );
 }
 
+function YamlTab(props: { kind: string; namespace: string; name: string }) {
+  return <YamlTabInner key={`${props.kind}/${props.namespace}/${props.name}`} {...props} />;
+}
+
 // ─── Events Tab ───────────────────────────────────────────────────────────────
-function EventsTab({ kind, namespace, name }: { kind: string; namespace: string; name: string }) {
+function EventsTabInner({ kind, namespace, name }: { kind: string; namespace: string; name: string }) {
   const [events, setEvents] = useState<K8sEvent[] | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setLoading(true);
-    setError(null);
     fetchK8sEvents(kind, namespace, name)
       .then(setEvents)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
-  }, [kind, namespace, name]);
+      .catch((e: Error) => setError(e.message));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  if (loading) return (
+  if (events === null && error === null) return (
     <div className="flex items-center justify-center h-32">
       <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
     </div>
@@ -137,32 +136,30 @@ function EventsTab({ kind, namespace, name }: { kind: string; namespace: string;
   );
 }
 
+function EventsTab(props: { kind: string; namespace: string; name: string }) {
+  return <EventsTabInner key={`${props.kind}/${props.namespace}/${props.name}`} {...props} />;
+}
+
 // ─── Main Drawer ──────────────────────────────────────────────────────────────
 export function ResourceDrawer({ node, onClose }: ResourceDrawerProps) {
   const { showToast } = useToast();
-  const [loading, setLoading] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
-
-  // Reset tab when node changes
-  useEffect(() => {
-    setActiveTab('overview');
-  }, [node]);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   const isOpen = node !== null;
 
   // Derive kind/namespace/name regardless of node type
   const meta = node
-    ? node.kind === 'flux'
-      ? { kind: node.data.kind, namespace: node.data.namespace, name: node.data.name }
-      : { kind: node.data.kind, namespace: node.data.namespace, name: node.data.name }
+    ? { kind: node.data.kind, namespace: node.data.namespace, name: node.data.name }
     : null;
+
+  const nodeKey = meta ? `${meta.kind}/${meta.namespace}/${meta.name}` : '';
 
   const fluxNode = node?.kind === 'flux' ? node.data : null;
   const canSuspend = fluxNode ? SUSPENDABLE_KINDS.has(fluxNode.kind) : false;
 
   const handleAction = async (action: 'reconcile' | 'suspend' | 'resume') => {
     if (!fluxNode) return;
-    setLoading(action);
+    setActionLoading(action);
     try {
       if (action === 'reconcile') await reconcile(fluxNode.kind, fluxNode.namespace, fluxNode.name);
       else if (action === 'suspend') await suspend(fluxNode.kind, fluxNode.namespace, fluxNode.name);
@@ -171,7 +168,7 @@ export function ResourceDrawer({ node, onClose }: ResourceDrawerProps) {
     } catch (e) {
       showToast(e instanceof Error ? e.message : `${action} failed`, 'error');
     } finally {
-      setLoading(null);
+      setActionLoading(null);
     }
   };
 
@@ -181,6 +178,7 @@ export function ResourceDrawer({ node, onClose }: ResourceDrawerProps) {
     { id: 'events', label: 'Events' },
   ];
 
+  // Use a keyed inner component to reset tab state on resource change
   return (
     <>
       {isOpen && (
@@ -214,96 +212,118 @@ export function ResourceDrawer({ node, onClose }: ResourceDrawerProps) {
           </button>
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-slate-200 dark:border-gray-700 shrink-0">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 py-2.5 text-xs font-semibold transition-colors ${
-                activeTab === tab.id
-                  ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
-                  : 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Tabs + Content — keyed by resource so tabs reset on navigation */}
+        {meta && (
+          <DrawerContent
+            key={nodeKey}
+            meta={meta}
+            fluxNode={fluxNode}
+            canSuspend={canSuspend}
+            actionLoading={actionLoading}
+            onAction={handleAction}
+            tabs={tabs}
+          />
+        )}
+      </div>
+    </>
+  );
+}
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-5 py-4">
-          {activeTab === 'overview' && meta && (
-            <div className="space-y-5">
-              {/* Status */}
-              {fluxNode && (
-                <div className="flex items-center gap-3">
-                  <HealthBadge status={fluxNode.status} />
-                </div>
-              )}
+interface DrawerContentProps {
+  meta: { kind: string; namespace: string; name: string };
+  fluxNode: FluxNode | null;
+  canSuspend: boolean;
+  actionLoading: string | null;
+  onAction: (action: 'reconcile' | 'suspend' | 'resume') => void;
+  tabs: { id: TabId; label: string }[];
+}
 
-              {/* Message */}
-              {fluxNode?.message && (
-                <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-3 text-xs text-slate-600 dark:text-gray-300 font-mono leading-relaxed">
-                  {fluxNode.message}
-                </div>
-              )}
+function DrawerContent({ meta, fluxNode, canSuspend, actionLoading, onAction, tabs }: DrawerContentProps) {
+  const [activeTab, setActiveTab] = useState<TabId>('overview');
 
-              {/* Metadata */}
-              <div className="space-y-2">
-                {fluxNode?.sourceRef && (
-                  <MetaRow label="Source Ref" value={fluxNode.sourceRef} />
-                )}
-                {fluxNode?.revision && (
-                  <MetaRow label="Revision" value={fluxNode.revision} />
+  return (
+    <>
+      {/* Tabs */}
+      <div className="flex border-b border-slate-200 dark:border-gray-700 shrink-0">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex-1 py-2.5 text-xs font-semibold transition-colors ${
+              activeTab === tab.id
+                ? 'text-indigo-600 dark:text-indigo-400 border-b-2 border-indigo-600 dark:border-indigo-400'
+                : 'text-slate-500 dark:text-gray-400 hover:text-slate-700 dark:hover:text-gray-200'
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-5 py-4">
+        {activeTab === 'overview' && (
+          <div className="space-y-5">
+            {fluxNode && (
+              <div className="flex items-center gap-3">
+                <HealthBadge status={fluxNode.status} />
+              </div>
+            )}
+
+            {fluxNode?.message && (
+              <div className="bg-slate-50 dark:bg-gray-800 rounded-lg p-3 text-xs text-slate-600 dark:text-gray-300 font-mono leading-relaxed">
+                {fluxNode.message}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              {fluxNode?.sourceRef && <MetaRow label="Source Ref" value={fluxNode.sourceRef} />}
+              {fluxNode?.revision && <MetaRow label="Revision" value={fluxNode.revision} />}
+            </div>
+
+            {fluxNode && (
+              <div className="flex flex-col gap-2 pt-2">
+                <button
+                  onClick={() => onAction('reconcile')}
+                  disabled={actionLoading !== null}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
+                >
+                  <RefreshCcw className={`w-4 h-4 ${actionLoading === 'reconcile' ? 'animate-spin' : ''}`} />
+                  Reconcile
+                </button>
+
+                {canSuspend && (
+                  <>
+                    <button
+                      onClick={() => onAction('suspend')}
+                      disabled={actionLoading !== null}
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      <PauseCircle className={`w-4 h-4 ${actionLoading === 'suspend' ? 'animate-spin' : ''}`} />
+                      Suspend
+                    </button>
+                    <button
+                      onClick={() => onAction('resume')}
+                      disabled={actionLoading !== null}
+                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
+                    >
+                      <PlayCircle className={`w-4 h-4 ${actionLoading === 'resume' ? 'animate-spin' : ''}`} />
+                      Resume
+                    </button>
+                  </>
                 )}
               </div>
+            )}
+          </div>
+        )}
 
-              {/* Flux actions */}
-              {fluxNode && (
-                <div className="flex flex-col gap-2 pt-2">
-                  <button
-                    onClick={() => handleAction('reconcile')}
-                    disabled={loading !== null}
-                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
-                  >
-                    <RefreshCcw className={`w-4 h-4 ${loading === 'reconcile' ? 'animate-spin' : ''}`} />
-                    Reconcile
-                  </button>
+        {activeTab === 'yaml' && (
+          <YamlTab kind={meta.kind} namespace={meta.namespace} name={meta.name} />
+        )}
 
-                  {canSuspend && (
-                    <>
-                      <button
-                        onClick={() => handleAction('suspend')}
-                        disabled={loading !== null}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
-                      >
-                        <PauseCircle className={`w-4 h-4 ${loading === 'suspend' ? 'animate-spin' : ''}`} />
-                        Suspend
-                      </button>
-                      <button
-                        onClick={() => handleAction('resume')}
-                        disabled={loading !== null}
-                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
-                      >
-                        <PlayCircle className={`w-4 h-4 ${loading === 'resume' ? 'animate-spin' : ''}`} />
-                        Resume
-                      </button>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'yaml' && meta && (
-            <YamlTab kind={meta.kind} namespace={meta.namespace} name={meta.name} />
-          )}
-
-          {activeTab === 'events' && meta && (
-            <EventsTab kind={meta.kind} namespace={meta.namespace} name={meta.name} />
-          )}
-        </div>
+        {activeTab === 'events' && (
+          <EventsTab kind={meta.kind} namespace={meta.namespace} name={meta.name} />
+        )}
       </div>
     </>
   );

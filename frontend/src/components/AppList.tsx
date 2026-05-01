@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Search, SlidersHorizontal, CheckCircle2, AlertCircle, Loader2, HelpCircle } from 'lucide-react';
-import { FluxNode, APP_KINDS, HealthStatus } from '@/types';
+import { FluxNode, APP_KINDS } from '@/types';
 import { AppCard } from './AppCard';
 
 interface AppListProps {

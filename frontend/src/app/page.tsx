@@ -30,9 +30,6 @@ export default function Home() {
   }, []);
 
   const connect = useCallback(() => {
-    setStatus('connecting');
-    setError(false);
-
     fetch('/api/tree')
       .then((r) => r.json())
       .then((data) => setGraph(data))

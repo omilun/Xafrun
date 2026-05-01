@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { FluxNode, ClusterInfo } from '../types';
 
@@ -10,17 +10,16 @@ interface NewsTickerProps {
 }
 
 export function NewsTicker({ nodes, info }: NewsTickerProps) {
-  const [expanded, setExpanded] = useState(false);
+  // userExpanded: whether the user has manually expanded the bar
+  const [userExpanded, setUserExpanded] = useState(false);
 
   const unhealthy = nodes.filter(
     (n) => n.status === 'Unhealthy' || n.status === 'Progressing'
   );
   const isHealthy = unhealthy.length === 0;
 
-  // Auto-open when cluster becomes unhealthy; never auto-close.
-  useEffect(() => {
-    if (!isHealthy) setExpanded(true);
-  }, [isHealthy]);
+  // Auto-expand when unhealthy; user can manually expand when healthy
+  const expanded = !isHealthy || userExpanded;
 
   // Build ticker messages.
   const tickerText = useMemo(() => {
@@ -46,7 +45,7 @@ export function NewsTicker({ nodes, info }: NewsTickerProps) {
     }
 
     return '✔ All cluster resources are healthy.';
-  }, [nodes, info, isHealthy, unhealthy]);
+  }, [info, isHealthy, unhealthy]);
 
   // Animation speed: ~80px per second, minimum 20s.
   const duration = Math.max(20, Math.ceil(tickerText.length * 0.15));
@@ -61,7 +60,7 @@ export function NewsTicker({ nodes, info }: NewsTickerProps) {
       <div
         className={`fixed bottom-0 left-0 right-0 h-1.5 ${accent.bar} cursor-pointer z-50
                     transition-all hover:h-2.5`}
-        onClick={() => setExpanded(true)}
+        onClick={() => setUserExpanded(true)}
         title="Click to expand status bar"
       />
     );
@@ -95,7 +94,7 @@ export function NewsTicker({ nodes, info }: NewsTickerProps) {
 
       {/* collapse button */}
       <button
-        onClick={() => setExpanded(false)}
+        onClick={() => setUserExpanded(false)}
         className={`px-2.5 h-full flex items-center hover:bg-black/5 transition-colors shrink-0 ${accent.text}`}
         title="Collapse status bar"
       >
