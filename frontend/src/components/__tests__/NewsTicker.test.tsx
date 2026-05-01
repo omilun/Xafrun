@@ -15,8 +15,8 @@ const info: ClusterInfo = {
   clusterName: 'test-cluster',
   k8sVersion: 'v1.30.0',
   fluxVersion: 'v2.3.0',
-  talosVersion: 'v1.7.0',
-  ciliumVersion: '1.15.0',
+  osImage: 'Talos v1.7.0',
+  cniVersion: 'Cilium 1.15.0',
   ingressController: 'nginx',
 };
 
@@ -28,7 +28,9 @@ describe('NewsTicker', () => {
   });
 
   it('shows flux and k8s versions in ticker text for healthy state', () => {
-    render(<NewsTicker nodes={healthyNodes} info={info} />);
+    const { container } = render(<NewsTicker nodes={healthyNodes} info={info} />);
+    // Starts collapsed for healthy cluster; click the strip to expand.
+    fireEvent.click(container.firstChild as HTMLElement);
     expect(screen.getByText(/v2\.3\.0/)).toBeInTheDocument();
     expect(screen.getByText(/v1\.30\.0/)).toBeInTheDocument();
   });
@@ -46,6 +48,8 @@ describe('NewsTicker', () => {
 
   it('collapses to a thin strip when collapse button is clicked', () => {
     const { container } = render(<NewsTicker nodes={healthyNodes} info={info} />);
+    // Starts collapsed; expand first by clicking the thin strip.
+    fireEvent.click(container.firstChild as HTMLElement);
     const collapseBtn = container.querySelector('button[title="Collapse status bar"]');
     expect(collapseBtn).toBeTruthy();
     fireEvent.click(collapseBtn!);

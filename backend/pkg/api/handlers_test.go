@@ -202,16 +202,16 @@ func TestGetInfo_BuildsClusterMetadata(t *testing.T) {
 		{"ClusterName", info.ClusterName, "test-cluster"},
 		{"K8sVersion", info.K8sVersion, "v1.36.0"},
 		{"FluxVersion", info.FluxVersion, "v1.8.2"},
-		{"CiliumVersion", info.CiliumVersion, "v1.19.3"},
-		{"IngressController", info.IngressController, "Cilium Gateway API"},
+		{"CniVersion", info.CniVersion, "Cilium v1.19.3"},
+		{"IngressController", info.IngressController, "Cilium Gateway API v1.19.3"},
 	}
 	for _, c := range checks {
 		if c.got != c.want {
 			t.Errorf("%s = %q, want %q", c.field, c.got, c.want)
 		}
 	}
-	if !strings.Contains(info.TalosVersion, "v1.13.0") {
-		t.Errorf("TalosVersion = %q, want to contain v1.13.0", info.TalosVersion)
+	if !strings.Contains(info.OsImage, "v1.13.0") {
+		t.Errorf("OsImage = %q, want to contain v1.13.0", info.OsImage)
 	}
 }
 
@@ -250,11 +250,11 @@ func TestGetInfo_HandlesMissingResources(t *testing.T) {
 	if info.FluxVersion != "" {
 		t.Errorf("expected empty FluxVersion, got %q", info.FluxVersion)
 	}
-	if info.TalosVersion != "" {
-		t.Errorf("expected empty TalosVersion, got %q", info.TalosVersion)
+	if info.OsImage != "" {
+		t.Errorf("expected empty OsImage, got %q", info.OsImage)
 	}
-	if info.CiliumVersion != "" {
-		t.Errorf("expected empty CiliumVersion, got %q", info.CiliumVersion)
+	if info.CniVersion != "" {
+		t.Errorf("expected empty CniVersion, got %q", info.CniVersion)
 	}
 }
 

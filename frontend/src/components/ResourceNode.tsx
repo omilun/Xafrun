@@ -1,101 +1,73 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
-import { CheckCircle2, XCircle, Loader2, HelpCircle, GitBranch, Box, Package, Container, Database, BookOpen, Image as ImageIcon, Cog, Radio, Bell, Webhook } from 'lucide-react';
 import { FluxNode, HealthStatus } from '../types';
 
-const HealthIcon = ({ status }: { status: HealthStatus }) => {
-  switch (status) {
-    case 'Healthy':
-      return <CheckCircle2 className="w-4 h-4 text-green-500" />;
-    case 'Unhealthy':
-      return <XCircle className="w-4 h-4 text-red-500" />;
-    case 'Progressing':
-      return <Loader2 className="w-4 h-4 text-blue-500 animate-spin" />;
-    default:
-      return <HelpCircle className="w-4 h-4 text-gray-400" />;
-  }
+const STATUS_BORDER: Record<HealthStatus, string> = {
+  Healthy:     'border-green-500',
+  Unhealthy:   'border-red-500',
+  Progressing: 'border-amber-400',
+  Unknown:     'border-slate-300',
 };
 
-const TypeIcon = ({ type }: { type: string }) => {
-  switch (type) {
-    case 'Source':
-      return <GitBranch className="w-4 h-4" />;
-    case 'Kustomization':
-      return <Box className="w-4 h-4" />;
-    case 'HelmRelease':
-      return <Package className="w-4 h-4" />;
-    case 'OCIRepository':
-      return <Container className="w-4 h-4" />;
-    case 'Bucket':
-      return <Database className="w-4 h-4" />;
-    case 'HelmRepository':
-    case 'HelmChart':
-      return <BookOpen className="w-4 h-4" />;
-    case 'ImageRepository':
-    case 'ImagePolicy':
-      return <ImageIcon className="w-4 h-4" />;
-    case 'ImageUpdateAutomation':
-      return <Cog className="w-4 h-4" />;
-    case 'Receiver':
-      return <Radio className="w-4 h-4" />;
-    case 'Alert':
-      return <Bell className="w-4 h-4" />;
-    case 'Provider':
-      return <Webhook className="w-4 h-4" />;
-    default:
-      return <Box className="w-4 h-4" />;
-  }
+const STATUS_BG: Record<HealthStatus, string> = {
+  Healthy:     'bg-green-50/10 dark:bg-green-950/20',
+  Unhealthy:   'bg-red-50/10 dark:bg-red-950/20',
+  Progressing: 'bg-amber-50/10 dark:bg-amber-950/20',
+  Unknown:     'bg-slate-50/10 dark:bg-slate-950/20',
 };
+
+const STATUS_DOT: Record<HealthStatus, string> = {
+  Healthy:     'bg-green-500',
+  Unhealthy:   'bg-red-500',
+  Progressing: 'bg-amber-400',
+  Unknown:     'bg-slate-300',
+};
+
+const truncate = (s: string, max: number) =>
+  s.length > max ? s.slice(0, max) + '…' : s;
 
 const ResourceNode = ({ data }: { data: FluxNode }) => {
+  const border = STATUS_BORDER[data.status] ?? STATUS_BORDER.Unknown;
+  const bg     = STATUS_BG[data.status]     ?? STATUS_BG.Unknown;
+  const dot    = STATUS_DOT[data.status]    ?? STATUS_DOT.Unknown;
+
+  const bottomText = data.message
+    ? truncate(data.message, 45)
+    : data.sourceRef
+    ? truncate(data.sourceRef, 45)
+    : null;
+
   return (
-    <div className={`px-4 py-3 shadow-lg rounded-lg border-2 bg-white min-w-[220px] max-w-[280px] ${
-      data.status === 'Healthy' ? 'border-green-100' :
-      data.status === 'Unhealthy' ? 'border-red-100' : 'border-blue-100'
-    }`}>
+    <div
+      className={`relative flex flex-col justify-between px-3 py-2.5 rounded border-2
+                  shadow-sm hover:shadow-md transition-shadow
+                  bg-white dark:bg-gray-900
+                  ${border} ${bg}`}
+      style={{ width: 260, minHeight: 80 }}
+    >
       <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-gray-300" />
 
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-gray-50 rounded">
-            <TypeIcon type={data.type} />
-          </div>
-          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">{data.kind}</span>
-        </div>
-        <HealthIcon status={data.status} />
-      </div>
+      {/* Status dot — top-right */}
+      <span
+        className={`absolute top-2 right-2 w-2 h-2 rounded-full ${dot}`}
+        aria-label={data.status}
+      />
 
-      <div className="flex flex-col gap-0.5">
-        <span className="text-sm font-semibold text-gray-800 truncate">{data.name}</span>
-        <span className="text-[10px] text-gray-500 font-mono">{data.namespace}</span>
-      </div>
+      {/* Top row: kind label */}
+      <span className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 pr-4">
+        {data.kind}
+      </span>
 
-      {data.sourceRef && (
-        <div className="mt-2 pt-2 border-t border-gray-50">
-          <span className="text-[9px] text-gray-400 uppercase font-bold tracking-tight">Source: </span>
-          <span className="text-[9px] text-gray-500 font-mono truncate">{data.sourceRef}</span>
-        </div>
-      )}
+      {/* Middle row: name */}
+      <span className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate mt-0.5">
+        {data.name}
+      </span>
 
-      {data.revision && (
-        <div className="mt-1">
-          <span className="text-[9px] text-gray-400 uppercase font-bold tracking-tight">Rev: </span>
-          <span className="text-[9px] text-gray-500 font-mono truncate">{data.revision}</span>
-        </div>
-      )}
-
-      {data.message && data.status !== 'Healthy' && (
-        <div className="mt-1">
-          <span className="text-[9px] text-red-400 italic leading-tight line-clamp-2">{data.message}</span>
-        </div>
-      )}
-
-      {data.inventory && data.inventory.length > 0 && (
-        <div className="mt-2 pt-2 border-t border-gray-50">
-          <span className="text-[9px] text-gray-400 uppercase font-bold tracking-tight">
-            Inventory: {data.inventory.length} objects
-          </span>
-        </div>
+      {/* Bottom row: message / sourceRef */}
+      {bottomText && (
+        <span className="text-[10px] text-slate-400 truncate mt-1">
+          {bottomText}
+        </span>
       )}
 
       <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-gray-300" />

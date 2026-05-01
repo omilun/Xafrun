@@ -2,6 +2,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"os"
@@ -55,11 +56,11 @@ func (h *Handler) StreamEvents(c *gin.Context) {
 }
 
 // GET /api/info — cluster metadata for the status ticker.
+// All fields are discovered dynamically from the k8s API — nothing is hardcoded.
 func (h *Handler) GetInfo(c *gin.Context) {
 	ctx := c.Request.Context()
 	info := models.ClusterInfo{
-		ClusterName:       clusterName(),
-		IngressController: "Cilium Gateway API",
+		ClusterName: clusterName(),
 	}
 
 	// Kubernetes server version.
@@ -67,10 +68,15 @@ func (h *Handler) GetInfo(c *gin.Context) {
 		info.K8sVersion = sv.GitVersion
 	}
 
-	// Talos version from the first node's OS image label.
+	// OS image from the first ready node (works on any distro).
 	var nodes corev1.NodeList
-	if err := h.Client.List(ctx, &nodes); err == nil && len(nodes.Items) > 0 {
-		info.TalosVersion = nodes.Items[0].Status.NodeInfo.OSImage
+	if err := h.Client.List(ctx, &nodes); err == nil {
+		for _, node := range nodes.Items {
+			if img := node.Status.NodeInfo.OSImage; img != "" {
+				info.OsImage = img
+				break
+			}
+		}
 	}
 
 	// Flux version from source-controller deployment image tag.
@@ -85,27 +91,100 @@ func (h *Handler) GetInfo(c *gin.Context) {
 		}
 	}
 
-	// Cilium version from cilium DaemonSet image tag.
-	var ds appsv1.DaemonSet
-	if err := h.Client.Get(ctx, types.NamespacedName{
-		Name: "cilium", Namespace: "kube-system",
-	}, &ds); err == nil {
-		for _, ctr := range ds.Spec.Template.Spec.Containers {
-			if ctr.Name == "cilium-agent" {
-				info.CiliumVersion = imageTag(ctr.Image)
-			}
-		}
-	}
+	// CNI: scan all DaemonSets cluster-wide; match by image name.
+	info.CniVersion = discoverCni(ctx, h.Client)
+
+	// Ingress controller: scan Deployments + DaemonSets cluster-wide.
+	info.IngressController = discoverIngress(ctx, h.Client)
 
 	c.JSON(http.StatusOK, info)
 }
 
-// clusterName returns the cluster name from env or a sensible default.
+// discoverCni scans all DaemonSets looking for a known CNI image name.
+// Returns "name vX.Y.Z" or empty string.
+func discoverCni(ctx context.Context, c client.Client) string {
+	cniPatterns := []struct{ match, label string }{
+		{"cilium-agent", "Cilium"},
+		{"cilium", "Cilium"},
+		{"calico-node", "Calico"},
+		{"calico", "Calico"},
+		{"flannel", "Flannel"},
+		{"weave-npc", "Weave"},
+		{"weave", "Weave"},
+		{"canal", "Canal"},
+		{"kube-router", "kube-router"},
+	}
+	var dsList appsv1.DaemonSetList
+	if err := c.List(ctx, &dsList); err != nil {
+		return ""
+	}
+	for _, ds := range dsList.Items {
+		for _, ctr := range ds.Spec.Template.Spec.Containers {
+			for _, p := range cniPatterns {
+				if strings.Contains(ctr.Name, p.match) || strings.Contains(ctr.Image, p.match) {
+					return p.label + " " + imageTag(ctr.Image)
+				}
+			}
+		}
+	}
+	return ""
+}
+
+// discoverIngress scans Deployments and DaemonSets for a known ingress controller.
+func discoverIngress(ctx context.Context, c client.Client) string {
+	ingressPatterns := []struct{ match, label string }{
+		{"cilium", "Cilium Gateway API"},
+		{"ingress-nginx", "ingress-nginx"},
+		{"nginx-ingress", "nginx-ingress"},
+		{"traefik", "Traefik"},
+		{"istio", "Istio"},
+		{"contour", "Contour"},
+		{"haproxy", "HAProxy Ingress"},
+		{"kong", "Kong"},
+		{"envoy", "Envoy Gateway"},
+	}
+	check := func(name, image string) string {
+		for _, p := range ingressPatterns {
+			if strings.Contains(name, p.match) || strings.Contains(image, p.match) {
+				tag := imageTag(image)
+				if tag != "unknown" && tag != "" {
+					return p.label + " " + tag
+				}
+				return p.label
+			}
+		}
+		return ""
+	}
+
+	var depList appsv1.DeploymentList
+	if err := c.List(ctx, &depList); err == nil {
+		for _, d := range depList.Items {
+			for _, ctr := range d.Spec.Template.Spec.Containers {
+				if v := check(d.Name, ctr.Image); v != "" {
+					return v
+				}
+			}
+		}
+	}
+	var dsList appsv1.DaemonSetList
+	if err := c.List(ctx, &dsList); err == nil {
+		for _, ds := range dsList.Items {
+			for _, ctr := range ds.Spec.Template.Spec.Containers {
+				if v := check(ds.Name, ctr.Image); v != "" {
+					return v
+				}
+			}
+		}
+	}
+	return ""
+}
+
+// clusterName returns the cluster name from env or a generic default.
 func clusterName() string {
 	if name := os.Getenv("CLUSTER_NAME"); name != "" {
 		return name
 	}
-	return "talos-tart-ha"
+	return "kubernetes"
 }
 
 // imageTag extracts the tag portion from a container image reference.

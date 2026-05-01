@@ -40,14 +40,17 @@ healthy, and what's broken.
 ### Helm (recommended)
 
 ```bash
-# OCI-distributed Helm chart (no chart repo needed)
-helm install xafrun oci://registry.talos-tart-ha.talos-on-macos.com/charts/xafrun \
-  --version 0.1.0 \
+# Install from public OCI registry (GitHub Container Registry)
+helm install xafrun oci://ghcr.io/omilun/charts/xafrun \
+  --version 0.2.0 \
   --namespace xafrun --create-namespace
 ```
 
-> Maintainers can also `helm install` straight from the repo:
-> `helm install xafrun ./charts/xafrun --namespace xafrun --create-namespace`
+> Self-hosted cluster? Pull from the in-cluster Zot registry instead:
+> ```bash
+> helm install xafrun oci://registry.<your-cluster>/charts/xafrun \
+>   --version 0.2.0 --namespace xafrun --create-namespace
+> ```
 
 Then port-forward:
 

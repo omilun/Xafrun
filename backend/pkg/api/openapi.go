@@ -202,8 +202,8 @@ const openAPISpec = `{
           "clusterName": {"type": "string"},
           "k8sVersion": {"type": "string"},
           "fluxVersion": {"type": "string"},
-          "talosVersion": {"type": "string"},
-          "ciliumVersion": {"type": "string"},
+          "osImage": {"type": "string"},
+          "cniVersion": {"type": "string"},
           "ingressController": {"type": "string"}
         }
       }

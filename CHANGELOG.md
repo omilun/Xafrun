@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0]
+
+### Added
+- **ArtifactHub metadata** (`artifacthub-repo.yml`) for public chart discovery.
+- Public Helm OCI install: `helm install xafrun oci://ghcr.io/omilun/charts/xafrun --version 0.2.0`
+
+### Changed
+- **Generic cluster info** — backend now discovers CNI, ingress controller, and OS
+  image by querying the Kubernetes API directly. No platform-specific assumptions
+  (works on any distro: Talos, Ubuntu, Bottlerocket, etc.).
+- `ClusterInfo.TalosVersion` → `osImage` (raw `NodeInfo.OSImage` from any node).
+- `ClusterInfo.CiliumVersion` → `cniVersion` (auto-detected: Cilium, Calico, Flannel, Weave…).
+- `IngressController` — auto-detected from cluster DaemonSets/Deployments (cilium-gateway,
+  ingress-nginx, Traefik, Istio, Contour, Kong…).
+- Default cluster name changed from `"talos-tart-ha"` → `"kubernetes"` (override with
+  `CLUSTER_NAME` env var).
+- **Graph node cards** redesigned — clean rectangular cards, border color = status,
+  TYPE label uppercase, no left color bar (matches flux-operator visual style).
+- **Layout** — more breathing room: `ranksep 220`, `nodesep 100`.
+- **News ticker** — now starts **closed by default**; auto-opens when any resource
+  is unhealthy; updated ticker text uses generic field names.
+
+### Removed
+- Hardcoded references to Talos Linux and Cilium from backend and frontend.
+
 ### Added
 
 - LICENSE file (MIT) matching the README declaration.

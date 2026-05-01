@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { FluxNode, ClusterInfo } from '../types';
 
@@ -10,12 +10,17 @@ interface NewsTickerProps {
 }
 
 export function NewsTicker({ nodes, info }: NewsTickerProps) {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
 
   const unhealthy = nodes.filter(
     (n) => n.status === 'Unhealthy' || n.status === 'Progressing'
   );
   const isHealthy = unhealthy.length === 0;
+
+  // Auto-open when cluster becomes unhealthy; never auto-close.
+  useEffect(() => {
+    if (!isHealthy) setExpanded(true);
+  }, [isHealthy]);
 
   // Build ticker messages.
   const tickerText = useMemo(() => {
@@ -34,8 +39,8 @@ export function NewsTicker({ nodes, info }: NewsTickerProps) {
         `✔ The resources on cluster ${info.clusterName} are healthy.` +
         `  Flux version: ${info.fluxVersion || '—'},` +
         `  Kubernetes version: ${info.k8sVersion || '—'},` +
-        `  OS: ${info.talosVersion || '—'},` +
-        `  CNI: Cilium ${info.ciliumVersion || '—'},` +
+        `  OS: ${info.osImage || '—'},` +
+        `  CNI: ${info.cniVersion || '—'},` +
         `  Ingress Controller: ${info.ingressController || '—'}`
       );
     }

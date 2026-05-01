@@ -1,0 +1,6 @@
+repositoryID: xafrun
+owners:
+  - name: omilun
+    email: omilun@users.noreply.github.com
+ignore:
+  - name: "*-test"

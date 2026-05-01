@@ -21,18 +21,18 @@ const nodeTypes = {
   fluxNode: ResourceNode,
 };
 
-const NODE_WIDTH  = 280;
-const NODE_HEIGHT = 120;
+const NODE_WIDTH  = 260;
+const NODE_HEIGHT = 80;
 
 function layoutWithDagre(data: FluxGraph): { nodes: Node[]; edges: Edge[] } {
   const g = new Dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
   g.setGraph({
     rankdir: 'TB',
-    ranksep: 140,
-    nodesep: 80,
-    marginx: 60,
-    marginy: 60,
+    ranksep: 220,
+    nodesep: 100,
+    marginx: 80,
+    marginy: 80,
   });
 
   data.nodes.forEach((n) => {
@@ -82,7 +82,7 @@ const FluxTree = ({ data, onNodeClick, rfInstanceRef }: FluxTreeProps) => {
   useEffect(() => {
     if (!rfInstance) return;
     const id = setTimeout(() => {
-      rfInstance.fitView({ padding: 0.25, duration: 400 });
+      rfInstance.fitView({ padding: 0.3, duration: 400 });
     }, 60);
     return () => clearTimeout(id);
   }, [nodes, rfInstance]);
@@ -99,7 +99,7 @@ const FluxTree = ({ data, onNodeClick, rfInstanceRef }: FluxTreeProps) => {
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.25 }}
+        fitViewOptions={{ padding: 0.3 }}
         minZoom={0.05}
         maxZoom={1.5}
         onInit={handleInit}

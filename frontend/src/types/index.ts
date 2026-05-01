@@ -44,7 +44,7 @@ export interface ClusterInfo {
   clusterName: string;
   k8sVersion: string;
   fluxVersion: string;
-  talosVersion: string;
-  ciliumVersion: string;
+  osImage: string;
+  cniVersion: string;
   ingressController: string;
 }
