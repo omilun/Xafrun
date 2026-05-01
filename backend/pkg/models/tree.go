@@ -3,9 +3,11 @@ package models
 type NodeType string
 
 const (
-	NodeSource        NodeType = "Source"
-	NodeKustomization NodeType = "Kustomization"
-	NodeHelmRelease   NodeType = "HelmRelease"
+	NodeSource          NodeType = "Source"
+	NodeKustomization   NodeType = "Kustomization"
+	NodeHelmRelease     NodeType = "HelmRelease"
+	NodeImageAutomation NodeType = "ImageAutomation"
+	NodeNotification    NodeType = "Notification"
 )
 
 type HealthStatus string
@@ -40,4 +42,9 @@ type Edge struct {
 type Graph struct {
 	Nodes []Node `json:"nodes"`
 	Edges []Edge `json:"edges"`
+}
+
+type ErrorResponse struct {
+	Error     string `json:"error"`
+	RequestID string `json:"request_id,omitempty"`
 }

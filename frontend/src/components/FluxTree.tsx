@@ -15,7 +15,7 @@ import 'reactflow/dist/style.css';
 import Dagre from '@dagrejs/dagre';
 
 import ResourceNode from './ResourceNode';
-import { FluxGraph } from '../types';
+import { FluxGraph, FluxNode } from '../types';
 
 const nodeTypes = {
   fluxNode: ResourceNode,
@@ -29,8 +29,8 @@ function layoutWithDagre(data: FluxGraph): { nodes: Node[]; edges: Edge[] } {
   g.setDefaultEdgeLabel(() => ({}));
   g.setGraph({
     rankdir: 'TB',
-    ranksep: 140,   // ↑ vertical gap between ranks (was 80)
-    nodesep: 80,    // ↑ horizontal gap between sibling nodes (was 40)
+    ranksep: 140,
+    nodesep: 80,
     marginx: 60,
     marginy: 60,
   });
@@ -71,13 +71,14 @@ function layoutWithDagre(data: FluxGraph): { nodes: Node[]; edges: Edge[] } {
 
 interface FluxTreeProps {
   data: FluxGraph;
+  onNodeClick?: (node: FluxNode) => void;
+  rfInstanceRef?: React.MutableRefObject<ReactFlowInstance | null>;
 }
 
-const FluxTree = ({ data }: FluxTreeProps) => {
+const FluxTree = ({ data, onNodeClick, rfInstanceRef }: FluxTreeProps) => {
   const { nodes, edges } = useMemo(() => layoutWithDagre(data), [data]);
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
 
-  // Re-fit whenever the node set changes (namespace filter, live update).
   useEffect(() => {
     if (!rfInstance) return;
     const id = setTimeout(() => {
@@ -86,8 +87,13 @@ const FluxTree = ({ data }: FluxTreeProps) => {
     return () => clearTimeout(id);
   }, [nodes, rfInstance]);
 
+  const handleInit = (instance: ReactFlowInstance) => {
+    setRfInstance(instance);
+    if (rfInstanceRef) rfInstanceRef.current = instance;
+  };
+
   return (
-    <div className="w-full h-full bg-slate-50">
+    <div className="w-full h-full bg-slate-50 dark:bg-gray-950">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -96,7 +102,8 @@ const FluxTree = ({ data }: FluxTreeProps) => {
         fitViewOptions={{ padding: 0.25 }}
         minZoom={0.05}
         maxZoom={1.5}
-        onInit={setRfInstance}
+        onInit={handleInit}
+        onNodeClick={(_e, node) => onNodeClick?.(node.data as FluxNode)}
       >
         <Background color="#cbd5e1" gap={20} />
         <Controls />
@@ -115,5 +122,3 @@ const FluxTree = ({ data }: FluxTreeProps) => {
 };
 
 export default FluxTree;
-
-

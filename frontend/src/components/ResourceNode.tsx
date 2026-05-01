@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
-import { CheckCircle2, XCircle, Loader2, HelpCircle, GitBranch, Box, Package } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, HelpCircle, GitBranch, Box, Package, Container, Database, BookOpen, Image as ImageIcon, Cog, Radio, Bell, Webhook } from 'lucide-react';
 import { FluxNode, HealthStatus } from '../types';
 
 const HealthIcon = ({ status }: { status: HealthStatus }) => {
@@ -24,6 +24,24 @@ const TypeIcon = ({ type }: { type: string }) => {
       return <Box className="w-4 h-4" />;
     case 'HelmRelease':
       return <Package className="w-4 h-4" />;
+    case 'OCIRepository':
+      return <Container className="w-4 h-4" />;
+    case 'Bucket':
+      return <Database className="w-4 h-4" />;
+    case 'HelmRepository':
+    case 'HelmChart':
+      return <BookOpen className="w-4 h-4" />;
+    case 'ImageRepository':
+    case 'ImagePolicy':
+      return <ImageIcon className="w-4 h-4" />;
+    case 'ImageUpdateAutomation':
+      return <Cog className="w-4 h-4" />;
+    case 'Receiver':
+      return <Radio className="w-4 h-4" />;
+    case 'Alert':
+      return <Bell className="w-4 h-4" />;
+    case 'Provider':
+      return <Webhook className="w-4 h-4" />;
     default:
       return <Box className="w-4 h-4" />;
   }

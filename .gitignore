@@ -1,0 +1,58 @@
+# ── Go ────────────────────────────────────────────────────────────────────────
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+backend/main
+backend/coverage.out
+backend/coverage.html
+vendor/
+
+# ── Node / Next.js ────────────────────────────────────────────────────────────
+node_modules/
+.next/
+out/
+build/
+dist/
+.npm
+.pnpm-store/
+.yarn/
+*.tsbuildinfo
+next-env.d.ts.bak
+
+# ── Env / secrets ─────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+kubeconfig
+.kube/
+
+# ── Editors / IDE ─────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Build / CI artefacts ──────────────────────────────────────────────────────
+bin/
+tmp/
+trivy-*.sarif
+sbom-*.json
+sbom-*.spdx.json
+
+# ── MkDocs ────────────────────────────────────────────────────────────────────
+site/
+.venv-docs/
+.venv/
+
+# ── Helm ──────────────────────────────────────────────────────────────────────
+charts/*/charts/
+charts/*.tgz

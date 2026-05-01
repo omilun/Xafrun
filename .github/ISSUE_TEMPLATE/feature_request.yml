@@ -1,0 +1,28 @@
+name: Feature Request
+description: Suggest a new feature or improvement for Fluxbaan
+title: "[Feature] "
+labels: [enhancement, triage]
+body:
+  - type: textarea
+    id: use-case
+    attributes:
+      label: Use Case
+      description: Describe the problem or use case that motivates this feature.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the feature you'd like to see and how it should work.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Have you considered any alternative solutions or workarounds?
+    validations:
+      required: false

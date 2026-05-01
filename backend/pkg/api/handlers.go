@@ -1,3 +1,4 @@
+// Package api provides the HTTP handlers for the Fluxbaan backend.
 package api
 
 import (

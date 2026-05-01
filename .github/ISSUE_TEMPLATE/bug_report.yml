@@ -1,0 +1,73 @@
+name: Bug Report
+description: Report a bug in Fluxbaan
+title: "[Bug] "
+labels: [bug, triage]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the bug.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: Step-by-step instructions to reproduce the issue.
+      placeholder: |
+        1. Deploy Fluxbaan with ...
+        2. Run ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behaviour
+      description: What did you expect to happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Behaviour
+      description: What actually happened?
+    validations:
+      required: true
+
+  - type: input
+    id: version-fluxbaan
+    attributes:
+      label: Fluxbaan Version
+      placeholder: e.g. v0.1.0
+    validations:
+      required: true
+
+  - type: input
+    id: version-kubernetes
+    attributes:
+      label: Kubernetes Version
+      placeholder: e.g. v1.30.0
+    validations:
+      required: false
+
+  - type: input
+    id: version-flux
+    attributes:
+      label: Flux Version
+      placeholder: e.g. v2.3.0
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: Paste any relevant log output here.
+      render: shell
+    validations:
+      required: false

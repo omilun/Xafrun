@@ -1,0 +1,43 @@
+# docker-compose.yaml — local development convenience.
+#
+# Mounts your kubeconfig into the backend container and runs the frontend
+# pointing at the backend. Useful when iterating on UI without rebuilding
+# images.
+#
+# Usage:
+#   docker compose up --build
+#   open http://localhost:3000
+#
+# Requires KUBECONFIG to be set, or set it inline:
+#   KUBECONFIG=$HOME/.kube/config docker compose up --build
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      KUBECONFIG: /root/.kube/config
+      LOG_LEVEL: info
+      CLUSTER_NAME: docker-compose-local
+    volumes:
+      - ${KUBECONFIG:-${HOME}/.kube/config}:/root/.kube/config:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      BACKEND_URL: http://backend:8080
+    depends_on:
+      backend:
+        condition: service_healthy

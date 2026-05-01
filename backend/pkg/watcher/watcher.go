@@ -1,12 +1,21 @@
+// Package watcher maintains an in-memory graph of Flux resources and notifies
+// subscribers whenever the Kubernetes API reports a change.
 package watcher
 
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	helmv2 "github.com/fluxcd/helm-controller/api/v2"
+	automationv1beta2 "github.com/fluxcd/image-automation-controller/api/v1beta2"
+	imagev1beta2 "github.com/fluxcd/image-reflector-controller/api/v1beta2"
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
+	notifv1 "github.com/fluxcd/notification-controller/api/v1"
+	notifv1beta3 "github.com/fluxcd/notification-controller/api/v1beta3"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/omilun/fluxbaan/pkg/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -19,9 +28,12 @@ import (
 // Watcher keeps an in-memory graph of Flux resources and notifies subscribers
 // whenever the Kubernetes API reports a change via controller-runtime informers.
 type Watcher struct {
-	ctrlClient  client.Client
-	ctrlCache   cache.Cache
-	scheme      *runtime.Scheme
+	ctrlClient client.Client
+	ctrlCache  cache.Cache
+	scheme     *runtime.Scheme
+	metrics    MetricsRecorder
+
+	ready atomic.Bool
 
 	mu    sync.RWMutex
 	graph models.Graph
@@ -30,6 +42,7 @@ type Watcher struct {
 	subscribers map[chan models.Graph]struct{}
 }
 
+// New creates a Watcher.
 func New(c client.Client, cc cache.Cache, s *runtime.Scheme) *Watcher {
 	return &Watcher{
 		ctrlClient:  c,
@@ -40,6 +53,12 @@ func New(c client.Client, cc cache.Cache, s *runtime.Scheme) *Watcher {
 	}
 }
 
+// SetMetrics injects a MetricsRecorder. Must be called before Start.
+func (w *Watcher) SetMetrics(mr MetricsRecorder) { w.metrics = mr }
+
+// Ready returns true once WaitForCacheSync has completed successfully.
+func (w *Watcher) Ready() bool { return w.ready.Load() }
+
 // Start registers informer event handlers and begins the cache sync.
 // It blocks until ctx is cancelled.
 func (w *Watcher) Start(ctx context.Context) error {
@@ -49,12 +68,23 @@ func (w *Watcher) Start(ctx context.Context) error {
 		DeleteFunc: func(_ interface{}) { w.rebuild(ctx) },
 	}
 
-	// Register handlers for all Flux resource types we care about.
-	for _, obj := range []client.Object{
+	watchTypes := []client.Object{
 		&sourcev1.GitRepository{},
+		&sourcev1.OCIRepository{},
+		&sourcev1.Bucket{},
+		&sourcev1.HelmRepository{},
+		&sourcev1.HelmChart{},
 		&kustomizev1.Kustomization{},
 		&helmv2.HelmRelease{},
-	} {
+		&imagev1beta2.ImageRepository{},
+		&imagev1beta2.ImagePolicy{},
+		&automationv1beta2.ImageUpdateAutomation{},
+		&notifv1.Receiver{},
+		&notifv1beta3.Alert{},
+		&notifv1beta3.Provider{},
+	}
+
+	for _, obj := range watchTypes {
 		informer, err := w.ctrlCache.GetInformer(ctx, obj)
 		if err != nil {
 			return fmt.Errorf("getting informer for %T: %w", obj, err)
@@ -64,15 +94,14 @@ func (w *Watcher) Start(ctx context.Context) error {
 		}
 	}
 
-	// Wait for all caches to sync before serving.
 	if !w.ctrlCache.WaitForCacheSync(ctx) {
 		return fmt.Errorf("cache sync timed out")
 	}
+	w.ready.Store(true)
+	slog.Info("watcher cache synced", "component", "watcher")
 
-	// Build graph from initial state.
 	w.rebuild(ctx)
 
-	// Block until context is cancelled (the cache runs in its own goroutine).
 	<-ctx.Done()
 	return nil
 }
@@ -90,6 +119,9 @@ func (w *Watcher) Subscribe() chan models.Graph {
 	w.subMu.Lock()
 	w.subscribers[ch] = struct{}{}
 	w.subMu.Unlock()
+	if w.metrics != nil {
+		w.metrics.IncSSESubscribers()
+	}
 	return ch
 }
 
@@ -99,34 +131,101 @@ func (w *Watcher) Unsubscribe(ch chan models.Graph) {
 	delete(w.subscribers, ch)
 	w.subMu.Unlock()
 	close(ch)
+	if w.metrics != nil {
+		w.metrics.DecSSESubscribers()
+	}
+}
+
+// Rebuild triggers a synchronous graph rebuild. Primarily useful for testing.
+func (w *Watcher) Rebuild(ctx context.Context) {
+	w.rebuild(ctx)
 }
 
 // ── Internal ─────────────────────────────────────────────────────────────────
 
+type sourceKey struct{ kind, namespace, name string }
+
 func (w *Watcher) rebuild(ctx context.Context) {
+	start := time.Now()
+
 	graph := models.Graph{
 		Nodes: []models.Node{},
 		Edges: []models.Edge{},
+	}
+
+	sourceByRef := map[sourceKey]string{}
+
+	addSourceNode := func(uid, name, ns, kind string, conditions []metav1.Condition, revision string) {
+		graph.Nodes = append(graph.Nodes, models.Node{
+			ID:        uid,
+			Type:      models.NodeSource,
+			Name:      name,
+			Namespace: ns,
+			Kind:      kind,
+			Status:    healthFromConditions(conditions),
+			Message:   messageFromConditions(conditions),
+			Revision:  revision,
+		})
+		sourceByRef[sourceKey{kind: kind, namespace: ns, name: name}] = uid
 	}
 
 	// GitRepositories
 	var gitRepos sourcev1.GitRepositoryList
 	if err := w.ctrlClient.List(ctx, &gitRepos); err == nil {
 		for _, r := range gitRepos.Items {
-			node := models.Node{
-				ID:        string(r.UID),
-				Type:      models.NodeSource,
-				Name:      r.Name,
-				Namespace: r.Namespace,
-				Kind:      "GitRepository",
-				Status:    healthFromConditions(r.Status.Conditions),
-				Message:   messageFromConditions(r.Status.Conditions),
-				Revision:  r.Status.Artifact.Revision,
+			rev := ""
+			if r.Status.Artifact != nil {
+				rev = r.Status.Artifact.Revision
 			}
-			if r.Spec.Reference != nil {
-				node.SourceRef = fmt.Sprintf("branch/%s", r.Spec.Reference.Branch)
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "GitRepository", r.Status.Conditions, rev)
+		}
+	}
+
+	// OCIRepositories
+	var ociRepos sourcev1.OCIRepositoryList
+	if err := w.ctrlClient.List(ctx, &ociRepos); err == nil {
+		for _, r := range ociRepos.Items {
+			rev := ""
+			if r.Status.Artifact != nil {
+				rev = r.Status.Artifact.Revision
 			}
-			graph.Nodes = append(graph.Nodes, node)
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "OCIRepository", r.Status.Conditions, rev)
+		}
+	}
+
+	// Buckets
+	var buckets sourcev1.BucketList
+	if err := w.ctrlClient.List(ctx, &buckets); err == nil {
+		for _, r := range buckets.Items {
+			rev := ""
+			if r.Status.Artifact != nil {
+				rev = r.Status.Artifact.Revision
+			}
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "Bucket", r.Status.Conditions, rev)
+		}
+	}
+
+	// HelmRepositories
+	var helmRepos sourcev1.HelmRepositoryList
+	if err := w.ctrlClient.List(ctx, &helmRepos); err == nil {
+		for _, r := range helmRepos.Items {
+			rev := ""
+			if r.Status.Artifact != nil {
+				rev = r.Status.Artifact.Revision
+			}
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmRepository", r.Status.Conditions, rev)
+		}
+	}
+
+	// HelmCharts
+	var helmCharts sourcev1.HelmChartList
+	if err := w.ctrlClient.List(ctx, &helmCharts); err == nil {
+		for _, r := range helmCharts.Items {
+			rev := ""
+			if r.Status.Artifact != nil {
+				rev = r.Status.Artifact.Revision
+			}
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmChart", r.Status.Conditions, rev)
 		}
 	}
 
@@ -155,21 +254,17 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			}
 			graph.Nodes = append(graph.Nodes, node)
 
-			// Edge: GitRepository → Kustomization
-			if ks.Spec.SourceRef.Kind == "GitRepository" {
-				for _, repo := range gitRepos.Items {
-					ns := ks.Spec.SourceRef.Namespace
-					if ns == "" {
-						ns = ks.Namespace
-					}
-					if repo.Name == ks.Spec.SourceRef.Name && repo.Namespace == ns {
-						graph.Edges = append(graph.Edges, models.Edge{
-							ID:     fmt.Sprintf("e-%s-%s", repo.UID, ks.UID),
-							Source: string(repo.UID),
-							Target: ksID,
-						})
-					}
-				}
+			srcNS := ks.Spec.SourceRef.Namespace
+			if srcNS == "" {
+				srcNS = ks.Namespace
+			}
+			key := sourceKey{kind: ks.Spec.SourceRef.Kind, namespace: srcNS, name: ks.Spec.SourceRef.Name}
+			if srcUID, ok := sourceByRef[key]; ok {
+				graph.Edges = append(graph.Edges, models.Edge{
+					ID:     fmt.Sprintf("e-%s-%s", srcUID, ksID),
+					Source: srcUID,
+					Target: ksID,
+				})
 			}
 		}
 	}
@@ -187,10 +282,107 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				Kind:      "HelmRelease",
 				Status:    healthFromConditions(hr.Status.Conditions),
 				Message:   messageFromConditions(hr.Status.Conditions),
-				SourceRef: fmt.Sprintf("%s/%s", hr.Spec.Chart.Spec.SourceRef.Kind, hr.Spec.Chart.Spec.SourceRef.Name),
 				Revision:  hr.Status.LastAttemptedRevision,
 			}
+			if hr.Spec.Chart != nil {
+				node.SourceRef = fmt.Sprintf("%s/%s", hr.Spec.Chart.Spec.SourceRef.Kind, hr.Spec.Chart.Spec.SourceRef.Name)
+			}
 			graph.Nodes = append(graph.Nodes, node)
+		}
+	}
+
+	// ImageRepositories
+	var imageRepos imagev1beta2.ImageRepositoryList
+	if err := w.ctrlClient.List(ctx, &imageRepos); err == nil {
+		for _, r := range imageRepos.Items {
+			graph.Nodes = append(graph.Nodes, models.Node{
+				ID:        string(r.UID),
+				Type:      models.NodeImageAutomation,
+				Name:      r.Name,
+				Namespace: r.Namespace,
+				Kind:      "ImageRepository",
+				Status:    healthFromConditions(r.Status.Conditions),
+				Message:   messageFromConditions(r.Status.Conditions),
+			})
+		}
+	}
+
+	// ImagePolicies
+	var imagePolicies imagev1beta2.ImagePolicyList
+	if err := w.ctrlClient.List(ctx, &imagePolicies); err == nil {
+		for _, r := range imagePolicies.Items {
+			graph.Nodes = append(graph.Nodes, models.Node{
+				ID:        string(r.UID),
+				Type:      models.NodeImageAutomation,
+				Name:      r.Name,
+				Namespace: r.Namespace,
+				Kind:      "ImagePolicy",
+				Status:    healthFromConditions(r.Status.Conditions),
+				Message:   messageFromConditions(r.Status.Conditions),
+			})
+		}
+	}
+
+	// ImageUpdateAutomations
+	var imageAutomations automationv1beta2.ImageUpdateAutomationList
+	if err := w.ctrlClient.List(ctx, &imageAutomations); err == nil {
+		for _, r := range imageAutomations.Items {
+			graph.Nodes = append(graph.Nodes, models.Node{
+				ID:        string(r.UID),
+				Type:      models.NodeImageAutomation,
+				Name:      r.Name,
+				Namespace: r.Namespace,
+				Kind:      "ImageUpdateAutomation",
+				Status:    healthFromConditions(r.Status.Conditions),
+				Message:   messageFromConditions(r.Status.Conditions),
+				Revision:  r.Status.LastPushCommit,
+			})
+		}
+	}
+
+	// Receivers
+	var receivers notifv1.ReceiverList
+	if err := w.ctrlClient.List(ctx, &receivers); err == nil {
+		for _, r := range receivers.Items {
+			graph.Nodes = append(graph.Nodes, models.Node{
+				ID:        string(r.UID),
+				Type:      models.NodeNotification,
+				Name:      r.Name,
+				Namespace: r.Namespace,
+				Kind:      "Receiver",
+				Status:    healthFromConditions(r.Status.Conditions),
+				Message:   messageFromConditions(r.Status.Conditions),
+			})
+		}
+	}
+
+	// Alerts
+	var alerts notifv1beta3.AlertList
+	if err := w.ctrlClient.List(ctx, &alerts); err == nil {
+		for _, r := range alerts.Items {
+			graph.Nodes = append(graph.Nodes, models.Node{
+				ID:        string(r.UID),
+				Type:      models.NodeNotification,
+				Name:      r.Name,
+				Namespace: r.Namespace,
+				Kind:      "Alert",
+				Status:    models.HealthUnknown,
+			})
+		}
+	}
+
+	// Providers
+	var providers notifv1beta3.ProviderList
+	if err := w.ctrlClient.List(ctx, &providers); err == nil {
+		for _, r := range providers.Items {
+			graph.Nodes = append(graph.Nodes, models.Node{
+				ID:        string(r.UID),
+				Type:      models.NodeNotification,
+				Name:      r.Name,
+				Namespace: r.Namespace,
+				Kind:      "Provider",
+				Status:    models.HealthUnknown,
+			})
 		}
 	}
 
@@ -199,6 +391,20 @@ func (w *Watcher) rebuild(ctx context.Context) {
 	w.mu.Unlock()
 
 	w.broadcast(graph)
+
+	if w.metrics != nil {
+		duration := time.Since(start).Seconds()
+		nodeCounts := map[string]int{}
+		unhealthyCounts := map[string]int{}
+		for _, n := range graph.Nodes {
+			nodeCounts[n.Kind]++
+			if n.Status == models.HealthUnhealthy {
+				unhealthyCounts[n.Kind]++
+			}
+		}
+		w.metrics.IncRebuildsTotal()
+		w.metrics.RecordRebuild(nodeCounts, unhealthyCounts, duration)
+	}
 }
 
 func (w *Watcher) broadcast(g models.Graph) {
@@ -208,7 +414,6 @@ func (w *Watcher) broadcast(g models.Graph) {
 		select {
 		case ch <- g:
 		default:
-			// Slow consumer: drop old value and send new one.
 			select {
 			case <-ch:
 			default:

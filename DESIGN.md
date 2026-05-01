@@ -13,15 +13,35 @@ Flux CD is a world-class GitOps engine, but its visibility is fragmented. Unlike
 ## 3. Technical Architecture
 
 ### Frontend: Next.js + React Flow
-- **Framework:** Next.js 15 (App Router) for a modern, fast SSR-capable UI.
-- **Visualization:** **React Flow** for the node-based interactive dependency tree.
-- **State Management:** **TanStack Query** for efficient caching and real-time polling.
-- **Styling:** Tailwind CSS for a clean, professional "Argo-inspired" aesthetic.
+- **Framework:** Next.js 16 (App Router) on React 19.
+- **Visualization:** **React Flow** for the interactive node graph.
+- **Layout:** **dagre** computes a top-down (TB) layered layout; the view is
+  re-fit on every graph change.
+- **Real-time updates:** the page subscribes to `/api/events` via the browser
+  `EventSource` API and replaces its graph state on every frame. *(No polling,
+  no TanStack Query — that was the original design but proved unnecessary once
+  SSE was in place.)*
+- **Styling:** Tailwind CSS, "Argo-inspired" but lighter.
+- **Sidebar:** Per-namespace tabs with health dot + count badge. Selecting a
+  namespace runs `filterGraph()`, which keeps ancestors visible so Source →
+  Kustomization → HelmRelease chains stay intact.
 
 ### Backend: Golang
-- **Engine:** High-performance Go binary using `client-go` and `controller-runtime`.
-- **API:** Gin-based REST API providing the graph structure to the frontend.
-- **Watcher Logic:** Uses K8s Informers to track Flux CRDs (`Kustomizations`, `HelmReleases`, `GitRepositories`) and their managed resources (Deployments, Services, etc.).
+- **Engine:** Go 1.26 service using `client-go` + `controller-runtime`
+  informers. Caches are driven by a single `cache.Cache` shared across
+  resource types.
+- **Watcher Logic:** Subscribes informer event handlers for `GitRepository`,
+  `Kustomization`, and `HelmRelease`. On any add/update/delete it performs a
+  full graph rebuild (the graph is small; this trades a little CPU for a much
+  simpler programming model).
+- **Push pipeline:** Each rebuild broadcasts the new graph snapshot to all
+  subscribers via a buffered `chan models.Graph`. Slow consumers have their
+  oldest pending value dropped instead of blocking the producer.
+- **API (Gin):**
+  - `GET /api/tree` — current snapshot.
+  - `GET /api/events` — SSE stream of `event: graph` frames.
+  - `GET /api/info` — cluster metadata (K8s, Flux, Talos, Cilium versions)
+    used by the bottom status ticker.
 
 ### Database: CloudNativePG (CNPG)
 - **Choice:** **PostgreSQL** via the **CloudNativePG** operator (already present in the Talos-on-macos cluster).
@@ -35,8 +55,12 @@ Flux CD is a world-class GitOps engine, but its visibility is fragmented. Unlike
 ### Phase 1: Real-time Visualizer (Completed ✅)
 - [x] Scaffold Go Backend with Flux API support.
 - [x] Scaffold Next.js Frontend with React Flow.
-- [x] Implement "Tree Logic" (Source -> KS/HR mapping).
-- [x] Initial Dockerization and CI (Argo Workflows).
+- [x] Implement "Tree Logic" (Source → Kustomization / HelmRelease mapping).
+- [x] Initial Dockerization (in-cluster BuildKit + Argo Workflows).
+- [x] Switch to **SSE + Informers** (replaces the original TanStack polling).
+- [x] Namespace sidebar with ancestor-aware filter.
+- [x] Status ticker (collapsible bottom bar with cluster metadata).
+- [x] Helm chart, GitHub Actions CI/release, signed images, MkDocs site.
 
 ### Phase 2: Persistence & History (Next 🛠️)
 - [ ] **Database Schema:** Define tables for `reconciliation_history`, `resource_snapshots`, and `events`.

@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: fluxbaan
+
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - rbac.yaml
+  - backend.yaml
+  - frontend.yaml
+
+commonLabels:
+  app.kubernetes.io/name: fluxbaan
+  app.kubernetes.io/managed-by: kustomize
+
+images:
+  - name: ghcr.io/omilun/fluxbaan-backend
+    newTag: "0.1.0"
+  - name: ghcr.io/omilun/fluxbaan-frontend
+    newTag: "0.1.0"

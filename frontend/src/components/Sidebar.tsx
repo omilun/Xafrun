@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 import { Layers, GitBranch, Box, Package, LayoutGrid } from 'lucide-react';
 import { FluxNode, HealthStatus } from '../types';

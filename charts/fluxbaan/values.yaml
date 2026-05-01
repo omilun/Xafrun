@@ -1,0 +1,101 @@
+backend:
+  image:
+    repository: ghcr.io/omilun/fluxbaan-backend
+    # Overrides the image tag. Defaults to .Chart.AppVersion when empty.
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 64Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  service:
+    port: 8080
+  # Cluster name shown in the UI ticker. Leave empty to omit the env var.
+  clusterName: ""
+
+frontend:
+  image:
+    repository: ghcr.io/omilun/fluxbaan-frontend
+    # Overrides the image tag. Defaults to .Chart.AppVersion when empty.
+    tag: ""
+    pullPolicy: IfNotPresent
+  replicas: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  service:
+    type: ClusterIP
+    port: 80
+
+serviceAccount:
+  # Create a dedicated ServiceAccount for the backend.
+  create: true
+  # Override the name; defaults to the fullname of the release.
+  name: ""
+
+rbac:
+  # Create the ClusterRole and ClusterRoleBinding required by the backend.
+  create: true
+  # When true, also create the reconciler ClusterRole that allows the backend
+  # to patch Flux resources (reconcile/suspend/resume actions).
+  allowReconcile: true
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  fsGroup: 65532
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop:
+      - ALL
+
+# Choose ONE of: ingress, httpRoute, or neither (use kubectl port-forward).
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  host: fluxbaan.local
+  tls: []
+
+httpRoute:
+  enabled: false
+  # Gateway API parentRefs, e.g.:
+  # parentRefs:
+  #   - name: main-gateway
+  #     namespace: networking
+  parentRefs: []
+  # Hostnames for the HTTPRoute, e.g.:
+  # hostnames:
+  #   - fluxbaan.example.com
+  hostnames: []
+
+networkPolicy:
+  enabled: false
+  # When enabled, restricts frontend ingress to the specified namespace.
+  ingressNamespaceSelector:
+    matchLabels:
+      kubernetes.io/metadata.name: networking
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+podAnnotations: {}
+podLabels: {}
+
+# Extra environment variables appended to the backend container.
+# - name: LOG_LEVEL
+#   value: info
+backendExtraEnv: []

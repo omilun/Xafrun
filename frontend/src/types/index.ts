@@ -1,4 +1,19 @@
-export type NodeType = 'Source' | 'Kustomization' | 'HelmRelease' | 'K8sResource';
+export type NodeType =
+  | 'Source'
+  | 'Kustomization'
+  | 'HelmRelease'
+  | 'K8sResource'
+  | 'OCIRepository'
+  | 'Bucket'
+  | 'HelmRepository'
+  | 'HelmChart'
+  | 'ImageRepository'
+  | 'ImagePolicy'
+  | 'ImageUpdateAutomation'
+  | 'Receiver'
+  | 'Alert'
+  | 'Provider';
+
 export type HealthStatus = 'Healthy' | 'Unhealthy' | 'Progressing' | 'Unknown';
 
 export interface FluxNode {
