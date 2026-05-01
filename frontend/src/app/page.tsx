@@ -4,15 +4,11 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { Activity, RefreshCcw } from 'lucide-react';
 import FluxTree from '@/components/FluxTree';
 import { Sidebar } from '@/components/Sidebar';
-import { FluxGraph, FluxNode, FluxEdge } from '@/types';
+import { NewsTicker } from '@/components/NewsTicker';
+import { FluxGraph, FluxNode, FluxEdge, ClusterInfo } from '@/types';
 
 type ConnStatus = 'connecting' | 'live' | 'error';
 
-/**
- * When a namespace is selected, return nodes in that namespace
- * PLUS all ancestor nodes (nodes with edges pointing into the set),
- * so the full dependency chain is always visible.
- */
 function filterGraph(graph: FluxGraph, namespace: string | null): FluxGraph {
   if (!namespace) return graph;
 
@@ -20,7 +16,6 @@ function filterGraph(graph: FluxGraph, namespace: string | null): FluxGraph {
     graph.nodes.filter((n) => n.namespace === namespace).map((n) => n.id)
   );
 
-  // Walk edges upward to collect ancestors
   let changed = true;
   while (changed) {
     changed = false;
@@ -40,10 +35,19 @@ function filterGraph(graph: FluxGraph, namespace: string | null): FluxGraph {
 }
 
 export default function Home() {
-  const [graph, setGraph] = useState<FluxGraph | null>(null);
-  const [status, setStatus] = useState<ConnStatus>('connecting');
-  const [error, setError] = useState(false);
+  const [graph, setGraph]         = useState<FluxGraph | null>(null);
+  const [status, setStatus]       = useState<ConnStatus>('connecting');
+  const [error, setError]         = useState(false);
   const [selectedNs, setSelectedNs] = useState<string | null>(null);
+  const [info, setInfo]           = useState<ClusterInfo | null>(null);
+
+  // Fetch cluster metadata once on mount.
+  useEffect(() => {
+    fetch('/api/info')
+      .then((r) => r.json())
+      .then((d) => setInfo(d))
+      .catch(() => {});
+  }, []);
 
   const connect = useCallback(() => {
     setStatus('connecting');
@@ -59,9 +63,7 @@ export default function Home() {
       try {
         setGraph(JSON.parse(e.data));
         setStatus('live');
-      } catch {
-        // ignore malformed events
-      }
+      } catch { /* ignore */ }
     });
     es.onerror = () => {
       setStatus('error');
@@ -108,7 +110,7 @@ export default function Home() {
           <div className="h-8 w-[1px] bg-slate-200" />
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${
-              status === 'live' ? 'bg-green-500 animate-pulse' :
+              status === 'live'  ? 'bg-green-500 animate-pulse' :
               status === 'error' ? 'bg-red-500' : 'bg-yellow-400 animate-pulse'
             }`} />
             <span className="text-xs font-semibold text-slate-600">
@@ -118,8 +120,8 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Body: sidebar + graph */}
-      <div className="flex flex-1 overflow-hidden">
+      {/* Body: sidebar + graph (pb-9 leaves room for the ticker) */}
+      <div className="flex flex-1 overflow-hidden pb-9">
         {graph && (
           <Sidebar
             nodes={graph.nodes}
@@ -157,6 +159,9 @@ export default function Home() {
           ) : null}
         </div>
       </div>
+
+      {/* News ticker — only shown once we have graph data */}
+      {graph && <NewsTicker nodes={graph.nodes} info={info} />}
     </main>
   );
 }
@@ -167,5 +172,6 @@ const Loader = () => (
     <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin" />
   </div>
 );
+
 
 

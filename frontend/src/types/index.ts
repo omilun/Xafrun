@@ -24,3 +24,12 @@ export interface FluxGraph {
   nodes: FluxNode[];
   edges: FluxEdge[];
 }
+
+export interface ClusterInfo {
+  clusterName: string;
+  k8sVersion: string;
+  fluxVersion: string;
+  talosVersion: string;
+  ciliumVersion: string;
+  ingressController: string;
+}

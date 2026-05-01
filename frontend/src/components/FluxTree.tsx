@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import ReactFlow, {
   Background,
   Controls,
@@ -9,6 +9,7 @@ import ReactFlow, {
   Edge,
   MarkerType,
   Position,
+  ReactFlowInstance,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import Dagre from '@dagrejs/dagre';
@@ -20,27 +21,23 @@ const nodeTypes = {
   fluxNode: ResourceNode,
 };
 
-// Node dimensions — must match the card size in ResourceNode.tsx
-const NODE_WIDTH = 280;
-const NODE_HEIGHT = 110;
+const NODE_WIDTH  = 280;
+const NODE_HEIGHT = 120;
 
 function layoutWithDagre(data: FluxGraph): { nodes: Node[]; edges: Edge[] } {
   const g = new Dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
   g.setGraph({
-    rankdir: 'TB',   // top → bottom
-    ranksep: 80,     // vertical gap between ranks
-    nodesep: 40,     // horizontal gap between nodes in same rank
-    marginx: 40,
-    marginy: 40,
+    rankdir: 'TB',
+    ranksep: 140,   // ↑ vertical gap between ranks (was 80)
+    nodesep: 80,    // ↑ horizontal gap between sibling nodes (was 40)
+    marginx: 60,
+    marginy: 60,
   });
 
-  // Register nodes
   data.nodes.forEach((n) => {
     g.setNode(n.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
   });
-
-  // Register edges
   data.edges.forEach((e) => {
     g.setEdge(e.source, e.target);
   });
@@ -53,7 +50,6 @@ function layoutWithDagre(data: FluxGraph): { nodes: Node[]; edges: Edge[] } {
       id: n.id,
       type: 'fluxNode',
       data: n,
-      // Dagre gives centre position; ReactFlow wants top-left
       position: { x: x - NODE_WIDTH / 2, y: y - NODE_HEIGHT / 2 },
       sourcePosition: Position.Bottom,
       targetPosition: Position.Top,
@@ -79,6 +75,16 @@ interface FluxTreeProps {
 
 const FluxTree = ({ data }: FluxTreeProps) => {
   const { nodes, edges } = useMemo(() => layoutWithDagre(data), [data]);
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
+
+  // Re-fit whenever the node set changes (namespace filter, live update).
+  useEffect(() => {
+    if (!rfInstance) return;
+    const id = setTimeout(() => {
+      rfInstance.fitView({ padding: 0.25, duration: 400 });
+    }, 60);
+    return () => clearTimeout(id);
+  }, [nodes, rfInstance]);
 
   return (
     <div className="w-full h-full bg-slate-50">
@@ -87,8 +93,10 @@ const FluxTree = ({ data }: FluxTreeProps) => {
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
-        fitViewOptions={{ padding: 0.2 }}
-        minZoom={0.1}
+        fitViewOptions={{ padding: 0.25 }}
+        minZoom={0.05}
+        maxZoom={1.5}
+        onInit={setRfInstance}
       >
         <Background color="#cbd5e1" gap={20} />
         <Controls />
@@ -107,4 +115,5 @@ const FluxTree = ({ data }: FluxTreeProps) => {
 };
 
 export default FluxTree;
+
 

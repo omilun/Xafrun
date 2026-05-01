@@ -17,6 +17,7 @@ import (
 	"github.com/omilun/fluxbaan/pkg/watcher"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
+	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/cache"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -69,13 +70,24 @@ func main() {
 		}
 	}()
 
-	handler := &api.Handler{Watcher: w}
+	// Discovery client for cluster metadata (/api/info).
+	discoveryClient, err := discovery.NewDiscoveryClientForConfig(k8sClient.Config)
+	if err != nil {
+		log.Fatalf("failed to create discovery client: %v", err)
+	}
+
+	handler := &api.Handler{
+		Watcher:   w,
+		Client:    ctrlClient,
+		Discovery: discoveryClient,
+	}
 
 	r := gin.Default()
 	r.Use(cors.Default())
 
 	r.GET("/api/tree", handler.GetTree)
 	r.GET("/api/events", handler.StreamEvents)
+	r.GET("/api/info", handler.GetInfo)
 
 	log.Println("Fluxbaan backend starting on :8080")
 	if err := r.Run(":8080"); err != nil {
