@@ -31,6 +31,7 @@ type Node struct {
 	SourceRef  string   `json:"sourceRef,omitempty"`  // e.g. "GitRepository/flux-system"
 	Revision   string   `json:"revision,omitempty"`   // last applied revision / commit
 	Inventory  []string `json:"inventory,omitempty"`  // managed object IDs
+	ChartName  string   `json:"chartName,omitempty"`  // HelmRelease chart name
 }
 
 type Edge struct {

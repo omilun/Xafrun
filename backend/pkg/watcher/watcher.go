@@ -286,6 +286,13 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			}
 			if hr.Spec.Chart != nil {
 				node.SourceRef = fmt.Sprintf("%s/%s", hr.Spec.Chart.Spec.SourceRef.Kind, hr.Spec.Chart.Spec.SourceRef.Name)
+				node.ChartName = hr.Spec.Chart.Spec.Chart
+			}
+			// Populate inventory from HelmRelease status (same structure as Kustomization).
+			if hr.Status.Inventory != nil {
+				for _, entry := range hr.Status.Inventory.Entries {
+					node.Inventory = append(node.Inventory, entry.ID)
+				}
 			}
 			graph.Nodes = append(graph.Nodes, node)
 		}

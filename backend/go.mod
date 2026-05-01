@@ -3,7 +3,7 @@ module github.com/omilun/xafrun
 go 1.26.0
 
 require (
-	github.com/fluxcd/helm-controller/api v1.2.0
+	github.com/fluxcd/helm-controller/api v1.5.3
 	github.com/fluxcd/image-automation-controller/api v1.1.2
 	github.com/fluxcd/image-reflector-controller/api v0.33.0
 	github.com/fluxcd/kustomize-controller/api v1.5.1

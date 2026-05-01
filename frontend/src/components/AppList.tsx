@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { Search, SlidersHorizontal, CheckCircle2, AlertCircle, Loader2, HelpCircle } from 'lucide-react';
-import { FluxNode, APP_KINDS } from '@/types';
+import { FluxNode, APP_KINDS, isOrchestratorKustomization } from '@/types';
 import { AppCard } from './AppCard';
 
 interface AppListProps {
@@ -24,7 +24,7 @@ export function AppList({ nodes, onSelectApp }: AppListProps) {
   const [healthFilter, setHealthFilter] = useState<HealthFilter>('all');
 
   const apps = useMemo(
-    () => nodes.filter((n) => APP_KINDS.has(n.kind)),
+    () => nodes.filter((n) => APP_KINDS.has(n.kind) && !isOrchestratorKustomization(n)),
     [nodes]
   );
 

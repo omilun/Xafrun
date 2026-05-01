@@ -27,6 +27,7 @@ export interface FluxNode {
   sourceRef?: string;
   revision?: string;
   inventory?: string[];
+  chartName?: string;
 }
 
 export interface FluxEdge {
@@ -73,3 +74,17 @@ export const SOURCE_KINDS = new Set([
   'GitRepository', 'OCIRepository', 'Bucket',
   'HelmRepository', 'HelmChart',
 ]);
+
+/**
+ * Returns true if this Kustomization is an orchestrator (parent) that deploys
+ * other Flux objects rather than actual workloads. These should be hidden from
+ * the app list — only leaf Kustomizations and all HelmReleases are shown.
+ */
+export function isOrchestratorKustomization(node: FluxNode): boolean {
+  if (node.kind !== 'Kustomization') return false;
+  // If it has no inventory we can't tell — show it to be safe.
+  if (!node.inventory || node.inventory.length === 0) return false;
+  return node.inventory.some(
+    (id) => id.endsWith('_Kustomization') || id.endsWith('_HelmRelease'),
+  );
+}
