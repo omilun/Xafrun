@@ -12,7 +12,7 @@ jobs:
     name: Trivy Filesystem Scan
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Scan filesystem
         uses: aquasecurity/trivy-action@master
@@ -24,7 +24,7 @@ jobs:
           exit-code: "0"
 
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-fs.sarif
           category: trivy-fs
@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Scan backend image
         uses: aquasecurity/trivy-action@master
@@ -46,7 +46,7 @@ jobs:
           exit-code: "0"
 
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-backend.sarif
           category: trivy-image-backend
@@ -56,7 +56,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Scan frontend image
         uses: aquasecurity/trivy-action@master
@@ -68,7 +68,7 @@ jobs:
           exit-code: "0"
 
       - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-frontend.sarif
           category: trivy-image-frontend
