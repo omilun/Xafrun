@@ -48,3 +48,28 @@ export interface ClusterInfo {
   cniVersion: string;
   ingressController: string;
 }
+
+export interface K8sEvent {
+  type: string;       // Normal | Warning
+  reason: string;
+  message: string;
+  count: number;
+  lastTimestamp: string;
+}
+
+// A parsed Flux inventory entry: namespace_name_group_kind
+export interface InventoryItem {
+  namespace: string;
+  name: string;
+  group: string;
+  kind: string;
+}
+
+// Top-level Flux app kinds shown in the app list
+export const APP_KINDS = new Set(['Kustomization', 'HelmRelease']);
+
+// Source kinds (shown as source nodes in detail graph)
+export const SOURCE_KINDS = new Set([
+  'GitRepository', 'OCIRepository', 'Bucket',
+  'HelmRepository', 'HelmChart',
+]);

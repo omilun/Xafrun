@@ -9,7 +9,7 @@ export async function GET(
   const { kind, namespace, name } = await params;
   try {
     const res = await fetch(
-      `${BACKEND_URL}/api/yaml/${kind}/${namespace}/${name}`,
+      `${BACKEND_URL}/api/k8sevents/${kind}/${namespace}/${name}`,
       { cache: 'no-store' }
     );
     const data = await res.json();

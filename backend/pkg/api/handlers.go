@@ -4,6 +4,7 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -11,9 +12,13 @@ import (
 	"github.com/gin-gonic/gin"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/yaml"
 
 	"github.com/omilun/xafrun/pkg/models"
 	"github.com/omilun/xafrun/pkg/watcher"
@@ -209,5 +214,153 @@ func sendGraph(c *gin.Context, g interface{}) {
 	}
 	c.SSEvent("graph", string(data))
 	c.Writer.Flush()
+}
+
+// GET /api/yaml/:kind/:namespace/:name — returns the live YAML of a k8s or Flux resource.
+func (h *Handler) GetYAML(c *gin.Context) {
+	ctx := c.Request.Context()
+	kind := c.Param("kind")
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	// Try typed Flux resource first.
+	if obj, ok := kindToObject(kind); ok {
+		if err := h.Client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, obj); err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		}
+		stripped := stripManagedFields(obj)
+		yamlBytes, err := yaml.Marshal(stripped)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{"yaml": string(yamlBytes)})
+		return
+	}
+
+	// Fall back to unstructured for native k8s kinds.
+	gvr, err := resolveGVR(h.Discovery, kind)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "unknown kind: " + kind})
+		return
+	}
+
+	var u unstructured.Unstructured
+	u.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   gvr.Group,
+		Version: gvr.Version,
+		Kind:    strings.ToUpper(kind[:1]) + strings.ToLower(kind[1:]),
+	})
+	if err := h.Client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &u); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Strip managedFields from unstructured.
+	m := u.Object
+	delete(m["metadata"].(map[string]interface{}), "managedFields")
+	yamlBytes, err := yaml.Marshal(m)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"yaml": string(yamlBytes)})
+}
+
+// GET /api/k8sevents/:kind/:namespace/:name — returns k8s events for a resource.
+func (h *Handler) GetK8sEvents(c *gin.Context) {
+	ctx := c.Request.Context()
+	kind := c.Param("kind")
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	var eventList corev1.EventList
+	if err := h.Client.List(ctx, &eventList,
+		client.InNamespace(namespace),
+		client.MatchingFields{
+			"involvedObject.name": name,
+		},
+	); err != nil {
+		// Fall back to listing all and filtering manually.
+		if err2 := h.Client.List(ctx, &eventList, client.InNamespace(namespace)); err2 != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err2.Error()})
+			return
+		}
+	}
+
+	type eventItem struct {
+		Type          string `json:"type"`
+		Reason        string `json:"reason"`
+		Message       string `json:"message"`
+		Count         int32  `json:"count"`
+		LastTimestamp string `json:"lastTimestamp"`
+	}
+
+	result := make([]eventItem, 0)
+	kindLower := strings.ToLower(kind)
+	for _, ev := range eventList.Items {
+		if strings.ToLower(ev.InvolvedObject.Name) != strings.ToLower(name) {
+			continue
+		}
+		if kindLower != "" && strings.ToLower(ev.InvolvedObject.Kind) != kindLower {
+			continue
+		}
+		ts := ""
+		if !ev.LastTimestamp.IsZero() {
+			ts = ev.LastTimestamp.UTC().Format(metav1.RFC3339Micro)
+		}
+		result = append(result, eventItem{
+			Type:          ev.Type,
+			Reason:        ev.Reason,
+			Message:       ev.Message,
+			Count:         ev.Count,
+			LastTimestamp: ts,
+		})
+	}
+
+	c.JSON(http.StatusOK, result)
+}
+
+// resolveGVR finds the GroupVersionResource for a given kind name using discovery.
+func resolveGVR(dc discovery.DiscoveryInterface, kind string) (schema.GroupVersionResource, error) {
+	lists, err := dc.ServerPreferredResources()
+	if err != nil && lists == nil {
+		return schema.GroupVersionResource{}, err
+	}
+	kindLower := strings.ToLower(kind)
+	for _, list := range lists {
+		gv, err := schema.ParseGroupVersion(list.GroupVersion)
+		if err != nil {
+			continue
+		}
+		for _, r := range list.APIResources {
+			if strings.ToLower(r.Kind) == kindLower {
+				return schema.GroupVersionResource{
+					Group:    gv.Group,
+					Version:  gv.Version,
+					Resource: r.Name,
+				}, nil
+			}
+		}
+	}
+	return schema.GroupVersionResource{}, fmt.Errorf("kind %q not found", kind)
+}
+
+// stripManagedFields removes the managedFields from a typed object by marshalling
+// to a map and deleting the key.
+func stripManagedFields(obj interface{}) interface{} {
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return obj
+	}
+	var m map[string]interface{}
+	if err := json.Unmarshal(data, &m); err != nil {
+		return obj
+	}
+	if meta, ok := m["metadata"].(map[string]interface{}); ok {
+		delete(meta, "managedFields")
+	}
+	return m
 }
 

@@ -111,6 +111,8 @@ func main() {
 		authenticated.GET("/api/events", handler.StreamEvents)
 		authenticated.GET("/api/info", handler.GetInfo)
 		authenticated.GET("/api/openapi.json", handler.GetOpenAPI)
+		authenticated.GET("/api/yaml/:kind/:namespace/:name", handler.GetYAML)
+		authenticated.GET("/api/k8sevents/:kind/:namespace/:name", handler.GetK8sEvents)
 		authenticated.POST("/api/reconcile/:kind/:namespace/:name", handler.Reconcile)
 		authenticated.POST("/api/suspend/:kind/:namespace/:name", handler.Suspend)
 		authenticated.POST("/api/resume/:kind/:namespace/:name", handler.Resume)

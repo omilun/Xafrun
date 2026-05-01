@@ -20,3 +20,16 @@ export async function resume(kind: string, namespace: string, name: string): Pro
   });
   if (!res.ok) throw new Error(`Resume failed: ${res.statusText}`);
 }
+
+export async function fetchYaml(kind: string, namespace: string, name: string): Promise<string> {
+  const res = await fetch(`${BASE}/api/yaml/${kind.toLowerCase()}/${namespace}/${name}`);
+  if (!res.ok) throw new Error(`Failed to fetch YAML: ${res.statusText}`);
+  const data = await res.json();
+  return data.yaml ?? '';
+}
+
+export async function fetchK8sEvents(kind: string, namespace: string, name: string) {
+  const res = await fetch(`${BASE}/api/k8sevents/${kind.toLowerCase()}/${namespace}/${name}`);
+  if (!res.ok) throw new Error(`Failed to fetch events: ${res.statusText}`);
+  return res.json();
+}
