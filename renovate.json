@@ -23,11 +23,6 @@
       "groupName": "npm packages"
     },
     {
-      "description": "Group all GitHub Actions into one PR per week.",
-      "matchManagers": ["github-actions"],
-      "groupName": "github actions"
-    },
-    {
       "description": "Auto-merge non-major dev dependencies.",
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["minor", "patch"],

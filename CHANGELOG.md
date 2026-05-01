@@ -12,14 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - LICENSE file (MIT) matching the README declaration.
 - `.gitignore` covering Go, Node, MkDocs and Helm artefacts.
 - `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`, `CHANGELOG.md`.
-- GitHub issue templates (bug / feature / question) with Discussions link.
+- Issue templates (bug / feature / question) with Discussions link.
 - Pull request template and `CODEOWNERS`.
-- `.github/dependabot.yml` covering gomod, npm, github-actions and docker.
-- GitHub Actions:
-  - `ci.yml` — Go vet/test/build, golangci-lint, npm ci/lint/build, helm lint, multi-arch docker build (no push).
-  - `release.yml` — multi-arch image build & push to GHCR with cosign keyless signing, SBOM attestation, GitHub Release notes, Helm chart publishing via `chart-releaser`.
-  - `scan.yml` — daily Trivy filesystem and image scans, SARIF upload to Code Scanning.
-  - `docs.yml` — MkDocs Material build & deploy to GitHub Pages.
+- `.github/dependabot.yml` and `renovate.json` covering gomod, npm and docker
+  (Dependabot/Renovate just open PRs — they don't need Actions to run).
+- `.github/CODEOWNERS`, `.github/dependabot.yml`, `renovate.json`,
+  PR / issue templates.
+- **In-cluster CI** in `Talos-on-macos/gitops/apps/fluxbaan/ci/`:
+  - Argo Workflows: `fluxbaan-test`, `fluxbaan-build`, `fluxbaan-scan`,
+    `fluxbaan-release`, `fluxbaan-docs`.
+  - Argo Events: GitHub-webhook EventSource + Sensor (push → CI; tag → release).
+  - CronWorkflow: nightly Trivy scan.
+  - All builds via BuildKit straight from GitHub source ref into the in-cluster
+    Zot OCI registry, with cosign signing on tagged releases.
 - Helm chart at `charts/fluxbaan/` with full values, optional Ingress / Gateway HTTPRoute / NetworkPolicy, security-hardened defaults.
 - Kustomize bundle at `deploy/` as an alternative install method.
 - MkDocs Material documentation site under `docs/` (Getting Started, User Guide, Architecture, API, Contributing, Roadmap, Comparison, FAQ).

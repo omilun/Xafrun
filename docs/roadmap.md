@@ -38,7 +38,7 @@ Fluxbaan is under active development. Below is the outward-facing roadmap, organ
 
 ## Track F — Developer experience
 
-- [ ] Helm chart published to `https://omilun.github.io/Fluxbaan`
+- [x] Helm chart published as OCI artefact to the in-cluster Zot registry
 - [ ] OCI chart on `ghcr.io/omilun/charts/fluxbaan`
 - [ ] GitHub Actions CI with automated image builds and chart releases
 - [ ] `flux` CLI plugin (`flux dashboard`)

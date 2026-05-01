@@ -89,9 +89,16 @@ Open <http://localhost:3000>.
 5. Update relevant docs under `docs/` (and the values table in
    `charts/fluxbaan/README.md` if you touched the chart).
 6. Run the local checks below.
-7. Open a PR against `master`. Fill in the template. CI will run automatically.
+7. Open a PR against `master`. Fill in the template.
 8. Address review feedback by pushing more commits to the same branch — we
    squash on merge.
+
+> **CI runs in-cluster** (Argo Workflows on the maintainer's Talos cluster) —
+> there are no GitHub Actions workflows. The pipeline lives in
+> [`Talos-on-macos/gitops/apps/fluxbaan/ci/`](https://github.com/omilun/Talos-on-macos/tree/main/gitops/apps/fluxbaan/ci).
+> A maintainer will trigger it for your PR. Please **always run the local
+> checks below before opening a PR** — they exactly mirror what runs in the
+> cluster.
 
 ## Local checks (must all pass before pushing)
 

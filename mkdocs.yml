@@ -1,7 +1,7 @@
 site_name: Fluxbaan
 site_description: A real-time visual GitOps dashboard for Flux CD
 site_author: omilun
-site_url: https://omilun.github.io/Fluxbaan/
+site_url: https://fluxbaan.talos-tart-ha.talos-on-macos.com/docs/
 repo_url: https://github.com/omilun/Fluxbaan
 repo_name: omilun/Fluxbaan
 edit_uri: edit/master/docs/

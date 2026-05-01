@@ -4,10 +4,7 @@
 
 **See your Flux.** A real-time, visual GitOps dashboard for [Flux CD](https://fluxcd.io).
 
-[![CI](https://github.com/omilun/Fluxbaan/actions/workflows/ci.yml/badge.svg)](https://github.com/omilun/Fluxbaan/actions/workflows/ci.yml)
-[![Release](https://github.com/omilun/Fluxbaan/actions/workflows/release.yml/badge.svg)](https://github.com/omilun/Fluxbaan/actions/workflows/release.yml)
-[![Trivy](https://github.com/omilun/Fluxbaan/actions/workflows/scan.yml/badge.svg)](https://github.com/omilun/Fluxbaan/actions/workflows/scan.yml)
-[![Docs](https://github.com/omilun/Fluxbaan/actions/workflows/docs.yml/badge.svg)](https://omilun.github.io/Fluxbaan/)
+[![Built in-cluster](https://img.shields.io/badge/CI-Argo%20Workflows-EF7B4D?logo=argo)](https://github.com/omilun/Talos-on-macos/tree/main/gitops/apps/fluxbaan/ci)
 [![Go Report Card](https://goreportcard.com/badge/github.com/omilun/fluxbaan)](https://goreportcard.com/report/github.com/omilun/fluxbaan)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Helm](https://img.shields.io/badge/Helm-chart-0F1689?logo=helm)](charts/fluxbaan)
@@ -43,12 +40,14 @@ healthy, and what's broken.
 ### Helm (recommended)
 
 ```bash
-helm repo add fluxbaan https://omilun.github.io/Fluxbaan
-helm repo update
-
-helm install fluxbaan fluxbaan/fluxbaan \
+# OCI-distributed Helm chart (no chart repo needed)
+helm install fluxbaan oci://registry.talos-tart-ha.talos-on-macos.com/charts/fluxbaan \
+  --version 0.1.0 \
   --namespace fluxbaan --create-namespace
 ```
+
+> Maintainers can also `helm install` straight from the repo:
+> `helm install fluxbaan ./charts/fluxbaan --namespace fluxbaan --create-namespace`
 
 Then port-forward:
 
@@ -71,7 +70,7 @@ cd Fluxbaan
 make run                       # backend :8080, frontend :3000
 ```
 
-Full installation guide → <https://omilun.github.io/Fluxbaan/getting-started/quick-start/>
+Full installation guide → [docs/getting-started/quick-start.md](docs/getting-started/quick-start.md)
 
 ## 🆚 How does it compare?
 
@@ -86,7 +85,7 @@ Full installation guide → <https://omilun.github.io/Fluxbaan/getting-started/q
 | Multi-cluster                    |    🛣️    |     —      |        ✅        |    —      |    ✅    |
 | Auth (OIDC)                      |    🛣️    |     —      |        ✅        |    —      |    ✅    |
 
-🛣️ = on the [roadmap](https://omilun.github.io/Fluxbaan/roadmap/).
+🛣️ = on the [roadmap](docs/roadmap.md).
 
 ## 📐 Architecture
 
@@ -104,7 +103,7 @@ flowchart LR
 - **Frontend:** Next.js 16 (App Router) + React 19. The `/api/*` routes proxy
   to the backend; the page subscribes to `/api/events` via `EventSource`.
 
-Architecture deep-dive → <https://omilun.github.io/Fluxbaan/architecture/overview/>
+Architecture deep-dive → [Architecture overview](https://github.com/omilun/Fluxbaan/blob/master/docs/architecture/overview.md)
 
 ## 📦 Prerequisites
 
@@ -123,10 +122,26 @@ and our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 For security issues, please follow the disclosure process in [SECURITY.md](SECURITY.md).
 
+### How CI works (no GitHub Actions)
+
+Fluxbaan is built and released by an **in-cluster pipeline** running on
+[Argo Workflows](https://argoproj.github.io/argo-workflows/) + [Argo Events](https://argoproj.github.io/argo-events/) +
+[BuildKit](https://github.com/moby/buildkit), with images pushed to a
+[Zot](https://zotregistry.dev/) OCI registry inside the cluster.
+
+The pipeline definitions live in
+[`Talos-on-macos/gitops/apps/fluxbaan/ci/`](https://github.com/omilun/Talos-on-macos/tree/main/gitops/apps/fluxbaan/ci):
+
+| Trigger | Workflow | What it does |
+|---|---|---|
+| `push` to `master` | `fluxbaan-test` → `fluxbaan-build` → `fluxbaan-scan` | Lint + tests, multi-arch images, Trivy scan |
+| `tag` `v*.*.*` | `fluxbaan-release` | Tagged images, cosign signing, Helm OCI push |
+| Daily 06:00 UTC | `fluxbaan-nightly-scan` (CronWorkflow) | Trivy CVE re-scan |
+| `push` to `master` (docs) | `fluxbaan-docs` | Build MkDocs site, publish to docs gateway |
+
 ## 🛣️ Roadmap
 
-The high-level roadmap is published at
-<https://omilun.github.io/Fluxbaan/roadmap/>. Highlights:
+The high-level roadmap is published at [docs/roadmap.md](docs/roadmap.md). Highlights:
 
 - All Flux CRDs (OCIRepository, Bucket, ImagePolicy, Receiver, Alert…)
 - Reconcile / suspend / YAML drawer / Git-vs-cluster diff
