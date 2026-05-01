@@ -1,6 +1,6 @@
 # Architecture Overview
 
-Fluxbaan is a lightweight two-tier application: a Go backend that watches the Kubernetes API and a Next.js frontend that renders the live graph.
+Xafrun is a lightweight two-tier application: a Go backend that watches the Kubernetes API and a Next.js frontend that renders the live graph.
 
 ## System diagram
 

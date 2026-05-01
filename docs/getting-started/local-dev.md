@@ -1,6 +1,6 @@
 # Local Development
 
-Run Fluxbaan locally against your current `kubectl` context.
+Run Xafrun locally against your current `kubectl` context.
 
 ## Required tooling
 
@@ -17,8 +17,8 @@ Run Fluxbaan locally against your current `kubectl` context.
 ## Running the full stack
 
 ```bash
-git clone https://github.com/omilun/Fluxbaan.git
-cd Fluxbaan
+git clone https://github.com/omilun/Xafrun.git
+cd Xafrun
 
 # Install frontend dependencies (first time only)
 cd frontend && npm install && cd ..

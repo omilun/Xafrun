@@ -1,6 +1,6 @@
-# Contributing to Fluxbaan
+# Contributing to Xafrun
 
-First — thank you for considering a contribution. Fluxbaan is an open-source
+First — thank you for considering a contribution. Xafrun is an open-source
 project that lives or dies by its community, and every issue, bug report, doc
 fix and PR helps.
 
@@ -16,7 +16,7 @@ participating you agree to uphold its terms.
 
 - **🐛 File a bug** — use the [bug report template](.github/ISSUE_TEMPLATE/bug_report.yml).
 - **💡 Suggest a feature** — use the [feature request template](.github/ISSUE_TEMPLATE/feature_request.yml).
-- **❓ Ask a question** — use [GitHub Discussions](https://github.com/omilun/Fluxbaan/discussions).
+- **❓ Ask a question** — use [GitHub Discussions](https://github.com/omilun/Xafrun/discussions).
 - **📝 Improve documentation** — every page under `docs/` is fair game.
 - **🧪 Add tests** — coverage is tracked in CI; see `backend/pkg/*_test.go` for examples.
 - **✨ Submit a feature PR** — please open an issue first to discuss the design.
@@ -37,8 +37,8 @@ participating you agree to uphold its terms.
 ### Clone and run
 
 ```bash
-git clone https://github.com/omilun/Fluxbaan.git
-cd Fluxbaan
+git clone https://github.com/omilun/Xafrun.git
+cd Xafrun
 
 # Backend talks to whichever cluster your current kubeconfig points at.
 make run                       # runs backend on :8080 + frontend on :3000
@@ -61,7 +61,7 @@ Open <http://localhost:3000>.
 │       ├── app/          # App Router routes (incl. /api/* proxies)
 │       ├── components/   # FluxTree, Sidebar, NewsTicker
 │       └── types/        # TS mirror of backend models
-├── charts/fluxbaan/      # Helm chart (primary distribution)
+├── charts/xafrun/      # Helm chart (primary distribution)
 ├── deploy/               # Kustomize bundle (alternative)
 ├── docs/                 # MkDocs Material content
 └── .github/workflows/    # CI, release, scan, docs
@@ -87,7 +87,7 @@ Open <http://localhost:3000>.
 3. Make the change.
 4. Add or update tests.
 5. Update relevant docs under `docs/` (and the values table in
-   `charts/fluxbaan/README.md` if you touched the chart).
+   `charts/xafrun/README.md` if you touched the chart).
 6. Run the local checks below.
 7. Open a PR against `master`. Fill in the template.
 8. Address review feedback by pushing more commits to the same branch — we
@@ -95,7 +95,7 @@ Open <http://localhost:3000>.
 
 > **CI runs in-cluster** (Argo Workflows on the maintainer's Talos cluster) —
 > there are no GitHub Actions workflows. The pipeline lives in
-> [`Talos-on-macos/gitops/apps/fluxbaan/ci/`](https://github.com/omilun/Talos-on-macos/tree/main/gitops/apps/fluxbaan/ci).
+> [`Talos-on-macos/gitops/apps/xafrun/ci/`](https://github.com/omilun/Talos-on-macos/tree/main/gitops/apps/xafrun/ci).
 > A maintainer will trigger it for your PR. Please **always run the local
 > checks below before opening a PR** — they exactly mirror what runs in the
 > cluster.
@@ -125,8 +125,8 @@ npm run build
 ### Helm chart (only if you touched `charts/`)
 
 ```bash
-helm lint charts/fluxbaan
-helm template charts/fluxbaan
+helm lint charts/xafrun
+helm template charts/xafrun
 ```
 
 ### Docs (only if you touched `docs/` or `mkdocs.yml`)

@@ -1,4 +1,4 @@
-# Fluxbaan: Design & Implementation Plan 🗺️
+# Xafrun: Design & Implementation Plan 🗺️
 
 ## 1. The Problem Statement
 **"The Flux UI Paradox"**
@@ -8,7 +8,7 @@ Flux CD is a world-class GitOps engine, but its visibility is fragmented. Unlike
 - **Fragmented UIs:** Existing tools often focus on lists rather than the **logical-to-physical mapping** (Source -> Kustomization -> Pods).
 
 ## 2. The Vision
-**Fluxbaan** (Flux + Kanban/Workflow) aims to be the missing "visual bridge" for Flux CD. It visualizes the entire GitOps lifecycle in an interactive graph, showing not just *if* something is synced, but *what* physical resources were created as a result.
+**Xafrun** (Flux + Kanban/Workflow) aims to be the missing "visual bridge" for Flux CD. It visualizes the entire GitOps lifecycle in an interactive graph, showing not just *if* something is synced, but *what* physical resources were created as a result.
 
 ## 3. Technical Architecture
 

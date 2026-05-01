@@ -10,7 +10,7 @@ import (
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/gin-gonic/gin"
-	"github.com/omilun/fluxbaan/pkg/watcher"
+	"github.com/omilun/xafrun/pkg/watcher"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	crfake "sigs.k8s.io/controller-runtime/pkg/client/fake"

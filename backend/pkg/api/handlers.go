@@ -1,4 +1,4 @@
-// Package api provides the HTTP handlers for the Fluxbaan backend.
+// Package api provides the HTTP handlers for the Xafrun backend.
 package api
 
 import (
@@ -14,8 +14,8 @@ import (
 	"k8s.io/client-go/discovery"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/omilun/fluxbaan/pkg/models"
-	"github.com/omilun/fluxbaan/pkg/watcher"
+	"github.com/omilun/xafrun/pkg/models"
+	"github.com/omilun/xafrun/pkg/watcher"
 )
 
 type Handler struct {

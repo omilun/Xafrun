@@ -98,7 +98,7 @@ export default function Home() {
             <Activity className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100 tracking-tight">Fluxbaan</h1>
+            <h1 className="text-xl font-bold text-slate-900 dark:text-gray-100 tracking-tight">Xafrun</h1>
             <p className="text-[10px] text-slate-500 dark:text-gray-400 font-medium uppercase tracking-widest">GitOps Visualizer</p>
           </div>
         </div>
@@ -163,7 +163,7 @@ export default function Home() {
                   <RefreshCcw className="w-8 h-8" />
                 </div>
                 <h2 className="text-lg font-bold text-slate-900 dark:text-gray-100">Backend Connection Failed</h2>
-                <p className="text-sm text-slate-500 dark:text-gray-400">Could not reach the Fluxbaan backend.</p>
+                <p className="text-sm text-slate-500 dark:text-gray-400">Could not reach the Xafrun backend.</p>
                 <button
                   onClick={connect}
                   className="mt-2 px-6 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-all shadow-md"

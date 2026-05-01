@@ -1,10 +1,10 @@
 # Resource Statuses
 
-Fluxbaan derives health status from the standard Flux `Ready` condition on each resource. The mapping is intentionally simple and mirrors what `flux get all` shows.
+Xafrun derives health status from the standard Flux `Ready` condition on each resource. The mapping is intentionally simple and mirrors what `flux get all` shows.
 
 ## Status mapping
 
-| Flux `Ready` condition | Reason | Fluxbaan status | Colour |
+| Flux `Ready` condition | Reason | Xafrun status | Colour |
 |------------------------|--------|-----------------|--------|
 | `status: "True"` | any | **Healthy** | 🟢 Green |
 | `status: "False"` | `Progressing` or `Reconciling` | **Progressing** | 🟡 Yellow |
@@ -27,11 +27,11 @@ Fluxbaan derives health status from the standard Flux `Ready` condition on each 
 
 ## Status message
 
-When a resource is **Unhealthy** or **Progressing**, Fluxbaan extracts the `message` field from the `Ready` condition and attaches it to the node. This message appears in:
+When a resource is **Unhealthy** or **Progressing**, Xafrun extracts the `message` field from the `Ready` condition and attaches it to the node. This message appears in:
 
 - The node tooltip (hover)
 - The status ticker (scrolling error list)
 - The `message` field in the [`GET /api/tree`](../api/rest.md#get-apitree) JSON response
 
 !!! note
-    Fluxbaan does not currently surface sub-conditions (e.g., `Stalled`, `Reconciling` from Flux v2.3+). These are surfaced via the `message` field of the `Ready` condition.
+    Xafrun does not currently surface sub-conditions (e.g., `Stalled`, `Reconciling` from Flux v2.3+). These are surfaced via the `message` field of the `Ready` condition.

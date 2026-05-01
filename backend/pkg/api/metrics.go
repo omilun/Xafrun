@@ -11,33 +11,33 @@ import (
 
 var (
 	graphNodesTotal = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "fluxbaan_graph_nodes_total",
+		Name: "xafrun_graph_nodes_total",
 		Help: "Total number of graph nodes by kind.",
 	}, []string{"kind"})
 
 	graphUnhealthyTotal = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "fluxbaan_graph_unhealthy_total",
+		Name: "xafrun_graph_unhealthy_total",
 		Help: "Number of unhealthy graph nodes by kind.",
 	}, []string{"kind"})
 
 	sseSubscribers = prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "fluxbaan_sse_subscribers",
+		Name: "xafrun_sse_subscribers",
 		Help: "Current number of SSE subscribers.",
 	})
 
 	graphRebuildDuration = prometheus.NewHistogram(prometheus.HistogramOpts{
-		Name:    "fluxbaan_graph_rebuild_duration_seconds",
+		Name:    "xafrun_graph_rebuild_duration_seconds",
 		Help:    "Duration of graph rebuild operations.",
 		Buckets: prometheus.DefBuckets,
 	})
 
 	graphRebuildsTotal = prometheus.NewCounter(prometheus.CounterOpts{
-		Name: "fluxbaan_graph_rebuilds_total",
+		Name: "xafrun_graph_rebuilds_total",
 		Help: "Total number of graph rebuilds.",
 	})
 
 	httpRequestsTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "fluxbaan_http_requests_total",
+		Name: "xafrun_http_requests_total",
 		Help: "Total HTTP requests by method, path, and status code.",
 	}, []string{"method", "path", "code"})
 )

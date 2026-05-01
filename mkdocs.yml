@@ -1,11 +1,11 @@
-site_name: Fluxbaan
+site_name: Xafrun
 site_description: A real-time visual GitOps dashboard for Flux CD
 site_author: omilun
-site_url: https://fluxbaan.talos-tart-ha.talos-on-macos.com/docs/
-repo_url: https://github.com/omilun/Fluxbaan
-repo_name: omilun/Fluxbaan
+site_url: https://xafrun.talos-tart-ha.talos-on-macos.com/docs/
+repo_url: https://github.com/omilun/Xafrun
+repo_name: omilun/Xafrun
 edit_uri: edit/master/docs/
-copyright: Copyright © 2026 Fluxbaan contributors
+copyright: Copyright © 2026 Xafrun contributors
 
 theme:
   name: material
@@ -69,7 +69,7 @@ markdown_extensions:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/omilun/Fluxbaan
+      link: https://github.com/omilun/Xafrun
 
 nav:
   - Home: index.md

@@ -1,8 +1,8 @@
-{{- $fullName := include "fluxbaan.fullname" . -}}
+{{- $fullName := include "xafrun.fullname" . -}}
 {{- $frontendPort := .Values.frontend.service.port -}}
 CHART: {{ .Chart.Name }}-{{ .Chart.Version }}
 
-Fluxbaan has been deployed successfully.
+Xafrun has been deployed successfully.
 
 {{- if .Values.httpRoute.enabled }}
   {{- if .Values.httpRoute.hostnames }}
@@ -11,7 +11,7 @@ Access the dashboard via HTTPRoute:
   https://{{ index .Values.httpRoute.hostnames 0 }}
   {{- else }}
 
-HTTPRoute is enabled. Configure a hostname via --set 'httpRoute.hostnames[0]=fluxbaan.example.com'.
+HTTPRoute is enabled. Configure a hostname via --set 'httpRoute.hostnames[0]=xafrun.example.com'.
   {{- end }}
 {{- else if .Values.ingress.enabled }}
 
@@ -27,9 +27,9 @@ No Ingress / HTTPRoute is enabled. Use port-forward to reach the UI:
 Then open:  http://localhost:{{ $frontendPort }}
 
 To enable a Gateway API HTTPRoute:
-  helm upgrade {{ .Release.Name }} ./charts/fluxbaan \
+  helm upgrade {{ .Release.Name }} ./charts/xafrun \
     --set httpRoute.enabled=true \
     --set 'httpRoute.parentRefs[0].name=main-gateway' \
     --set 'httpRoute.parentRefs[0].namespace=networking' \
-    --set 'httpRoute.hostnames[0]=fluxbaan.example.com'
+    --set 'httpRoute.hostnames[0]=xafrun.example.com'
 {{- end }}

@@ -15,8 +15,8 @@ Follow these steps to set up a full local development environment.
 ## Clone and install
 
 ```bash
-git clone https://github.com/omilun/Fluxbaan.git
-cd Fluxbaan
+git clone https://github.com/omilun/Xafrun.git
+cd Xafrun
 
 # Install frontend dependencies
 cd frontend && npm install && cd ..
@@ -77,7 +77,7 @@ npm test
 
     ```bash
     cd backend
-    go build -o ../bin/fluxbaan-backend .
+    go build -o ../bin/xafrun-backend .
     ```
 
 === "Frontend"
@@ -90,7 +90,7 @@ npm test
 === "Docker (multi-stage)"
 
     ```bash
-    docker build -t fluxbaan:local .
+    docker build -t xafrun:local .
     ```
 
 ## Useful commands

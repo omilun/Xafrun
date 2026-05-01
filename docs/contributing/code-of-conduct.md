@@ -2,7 +2,7 @@
 
 ## Our pledge
 
-Fluxbaan follows the **Contributor Covenant version 2.1**.
+Xafrun follows the **Contributor Covenant version 2.1**.
 
 We as contributors and maintainers pledge to make participation in our project a harassment-free experience for everyone, regardless of age, body size, visible or invisible disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education, socio-economic status, nationality, personal appearance, race, caste, colour, religion, or sexual identity and orientation.
 

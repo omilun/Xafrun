@@ -1,6 +1,6 @@
 # High Availability
 
-Fluxbaan is designed to run as a single-replica deployment by default — the
+Xafrun is designed to run as a single-replica deployment by default — the
 backend keeps an in-memory graph that is rebuilt from the Kubernetes informer
 cache on every change, and SSE clients reconnect transparently if the backend
 restarts.
@@ -49,7 +49,7 @@ backend:
             labelSelector:
               matchLabels:
                 app.kubernetes.io/component: backend
-                app.kubernetes.io/name: fluxbaan
+                app.kubernetes.io/name: xafrun
 ```
 
 Set the same for the frontend if you put it behind an ingress with multiple
@@ -64,7 +64,7 @@ This is tracked as `track-c-ha` on the [roadmap](../roadmap.md).
 
 ## What this is NOT
 
-- Fluxbaan does **not** provide HA for Flux itself. Flux comes with its own
+- Xafrun does **not** provide HA for Flux itself. Flux comes with its own
   controller-replica story (`flux install --watch-all-namespaces` etc.).
-- Fluxbaan does **not** persist any data today; each replica is a fresh view
+- Xafrun does **not** persist any data today; each replica is a fresh view
   of the cluster.

@@ -1,7 +1,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "fluxbaan.name" -}}
+{{- define "xafrun.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -10,7 +10,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by DNS naming spec).
 If release name contains the chart name, use the release name only.
 */}}
-{{- define "fluxbaan.fullname" -}}
+{{- define "xafrun.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -26,16 +26,16 @@ If release name contains the chart name, use the release name only.
 {{/*
 Create chart label value: "name-version".
 */}}
-{{- define "fluxbaan.chart" -}}
+{{- define "xafrun.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels applied to every resource.
 */}}
-{{- define "fluxbaan.labels" -}}
-helm.sh/chart: {{ include "fluxbaan.chart" . }}
-{{ include "fluxbaan.selectorLabels" . }}
+{{- define "xafrun.labels" -}}
+helm.sh/chart: {{ include "xafrun.chart" . }}
+{{ include "xafrun.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -45,33 +45,33 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels shared by all workloads (no component here — added per-workload).
 */}}
-{{- define "fluxbaan.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "fluxbaan.name" . }}
+{{- define "xafrun.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "xafrun.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Backend selector labels.
 */}}
-{{- define "fluxbaan.backend.selectorLabels" -}}
-{{ include "fluxbaan.selectorLabels" . }}
+{{- define "xafrun.backend.selectorLabels" -}}
+{{ include "xafrun.selectorLabels" . }}
 app.kubernetes.io/component: backend
 {{- end }}
 
 {{/*
 Frontend selector labels.
 */}}
-{{- define "fluxbaan.frontend.selectorLabels" -}}
-{{ include "fluxbaan.selectorLabels" . }}
+{{- define "xafrun.frontend.selectorLabels" -}}
+{{ include "xafrun.selectorLabels" . }}
 app.kubernetes.io/component: frontend
 {{- end }}
 
 {{/*
 ServiceAccount name used by the backend.
 */}}
-{{- define "fluxbaan.serviceAccountName" -}}
+{{- define "xafrun.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "fluxbaan.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "xafrun.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}
@@ -80,7 +80,7 @@ ServiceAccount name used by the backend.
 {{/*
 Backend image (repository:tag, falling back to AppVersion).
 */}}
-{{- define "fluxbaan.backendImage" -}}
+{{- define "xafrun.backendImage" -}}
 {{- $tag := .Values.backend.image.tag | default .Chart.AppVersion }}
 {{- printf "%s:%s" .Values.backend.image.repository $tag }}
 {{- end }}
@@ -88,7 +88,7 @@ Backend image (repository:tag, falling back to AppVersion).
 {{/*
 Frontend image (repository:tag, falling back to AppVersion).
 */}}
-{{- define "fluxbaan.frontendImage" -}}
+{{- define "xafrun.frontendImage" -}}
 {{- $tag := .Values.frontend.image.tag | default .Chart.AppVersion }}
 {{- printf "%s:%s" .Values.frontend.image.repository $tag }}
 {{- end }}

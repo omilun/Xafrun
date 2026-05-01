@@ -2,10 +2,10 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: {{ include "fluxbaan.fullname" . }}
+  name: {{ include "xafrun.fullname" . }}
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "fluxbaan.labels" . | nindent 4 }}
+    {{- include "xafrun.labels" . | nindent 4 }}
   {{- with .Values.ingress.annotations }}
   annotations:
     {{- toYaml . | nindent 4 }}
@@ -26,7 +26,7 @@ spec:
             pathType: Prefix
             backend:
               service:
-                name: {{ include "fluxbaan.fullname" . }}-frontend
+                name: {{ include "xafrun.fullname" . }}-frontend
                 port:
                   number: {{ .Values.frontend.service.port }}
 {{- end }}

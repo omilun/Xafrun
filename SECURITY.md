@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Fluxbaan is in early development. Until v1.0.0, **only the latest minor
+Xafrun is in early development. Until v1.0.0, **only the latest minor
 release receives security fixes**. Once v1.0 ships, the previous minor will
 also receive critical patches for ~6 months.
 
@@ -17,15 +17,15 @@ also receive critical patches for ~6 months.
 Instead, please use one of:
 
 1. **GitHub private vulnerability reporting** — preferred.
-   <https://github.com/omilun/Fluxbaan/security/advisories/new>
+   <https://github.com/omilun/Xafrun/security/advisories/new>
 2. **Email** — `omilun@users.noreply.github.com` with subject
-   `[SECURITY] Fluxbaan vulnerability report`.
+   `[SECURITY] Xafrun vulnerability report`.
 
 Please include:
 
 - A clear description of the issue and its impact.
 - Steps to reproduce, ideally with a minimal proof of concept.
-- Versions affected (Fluxbaan, Kubernetes, Flux).
+- Versions affected (Xafrun, Kubernetes, Flux).
 - Whether the issue has been disclosed elsewhere.
 
 ### What to expect
@@ -44,10 +44,10 @@ advisory unless you prefer to remain anonymous.
 
 In scope:
 
-- The Fluxbaan backend (`backend/`)
-- The Fluxbaan frontend (`frontend/`)
-- The published container images on `ghcr.io/omilun/fluxbaan-*`
-- The Helm chart at `charts/fluxbaan/`
+- The Xafrun backend (`backend/`)
+- The Xafrun frontend (`frontend/`)
+- The published container images on `ghcr.io/omilun/xafrun-*`
+- The Helm chart at `charts/xafrun/`
 
 Out of scope:
 
@@ -57,7 +57,7 @@ Out of scope:
 
 ## Hardening defaults
 
-Fluxbaan ships with security-conscious defaults:
+Xafrun ships with security-conscious defaults:
 
 - Read-only root filesystem
 - `runAsNonRoot: true`, drop all capabilities, `seccompProfile: RuntimeDefault`

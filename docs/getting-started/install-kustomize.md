@@ -1,16 +1,16 @@
 # Kustomize Installation
 
-Install Fluxbaan using `kubectl apply -k` (no Helm required).
+Install Xafrun using `kubectl apply -k` (no Helm required).
 
 ## Apply the base manifests
 
 ```bash
-kubectl apply -k github.com/omilun/Fluxbaan//deploy?ref=v0.1.0
+kubectl apply -k github.com/omilun/Xafrun//deploy?ref=v0.1.0
 ```
 
 This creates:
 
-- `Namespace` **fluxbaan**
+- `Namespace` **xafrun**
 - `ServiceAccount`, `ClusterRole`, and `ClusterRoleBinding`
 - `Deployment` for the combined backend + frontend pod
 - `Service` exposing ports 8080 (backend) and 3000 (frontend)
@@ -18,8 +18,8 @@ This creates:
 ## Verify the deployment
 
 ```bash
-kubectl rollout status deployment/fluxbaan -n fluxbaan
-kubectl get pods -n fluxbaan
+kubectl rollout status deployment/xafrun -n xafrun
+kubectl get pods -n xafrun
 ```
 
 ## Adding your own overlays
@@ -31,16 +31,16 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - github.com/omilun/Fluxbaan//deploy?ref=v0.1.0
+  - github.com/omilun/Xafrun//deploy?ref=v0.1.0
 
-namespace: fluxbaan
+namespace: xafrun
 
 patches:
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
       metadata:
-        name: fluxbaan
+        name: xafrun
       spec:
         template:
           spec:
@@ -51,7 +51,7 @@ patches:
                     value: "my-production-cluster"
     target:
       kind: Deployment
-      name: fluxbaan
+      name: xafrun
 ```
 
 Apply your overlay:
@@ -66,7 +66,7 @@ To update to a newer release, change the `ref` in your `kustomization.yaml`:
 
 ```yaml
 resources:
-  - github.com/omilun/Fluxbaan//deploy?ref=v0.2.0
+  - github.com/omilun/Xafrun//deploy?ref=v0.2.0
 ```
 
 Then re-apply:
@@ -81,5 +81,5 @@ kubectl apply -k my-overlay/
 ## Uninstalling
 
 ```bash
-kubectl delete -k github.com/omilun/Fluxbaan//deploy?ref=v0.1.0
+kubectl delete -k github.com/omilun/Xafrun//deploy?ref=v0.1.0
 ```

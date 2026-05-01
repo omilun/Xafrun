@@ -7,7 +7,7 @@ The left sidebar lists every namespace that contains at least one Flux resource.
 When one or more namespaces are selected:
 
 1. Only nodes whose `namespace` field matches a selected namespace are shown directly.
-2. **Ancestor walk** — for each visible node, Fluxbaan walks *up* the dependency edges and keeps all ancestor nodes visible too, even if they live in a different namespace.
+2. **Ancestor walk** — for each visible node, Xafrun walks *up* the dependency edges and keeps all ancestor nodes visible too, even if they live in a different namespace.
 
 ## Example
 
@@ -26,7 +26,7 @@ apps/podinfo  (Kustomization)
 apps/podinfo-release  (HelmRelease)
 ```
 
-If you select only the **`apps`** namespace, Fluxbaan shows:
+If you select only the **`apps`** namespace, Xafrun shows:
 
 - `apps/podinfo` ✅ (directly selected)
 - `apps/podinfo-release` ✅ (directly selected)

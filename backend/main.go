@@ -19,9 +19,9 @@ import (
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/omilun/fluxbaan/pkg/api"
-	"github.com/omilun/fluxbaan/pkg/k8s"
-	"github.com/omilun/fluxbaan/pkg/watcher"
+	"github.com/omilun/xafrun/pkg/api"
+	"github.com/omilun/xafrun/pkg/k8s"
+	"github.com/omilun/xafrun/pkg/watcher"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/discovery"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -119,7 +119,7 @@ func main() {
 	addr := fmt.Sprintf(":%s", backendPort())
 	srv := &http.Server{Addr: addr, Handler: r}
 
-	slog.Info("Fluxbaan backend starting", "addr", addr)
+	slog.Info("Xafrun backend starting", "addr", addr)
 
 	go func() {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {

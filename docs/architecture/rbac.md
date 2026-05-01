@@ -1,6 +1,6 @@
 # RBAC & Permissions
 
-Fluxbaan requires read-only access to Flux CRDs and a small set of core Kubernetes resources. It never writes to the cluster.
+Xafrun requires read-only access to Flux CRDs and a small set of core Kubernetes resources. It never writes to the cluster.
 
 ## ClusterRole
 
@@ -8,7 +8,7 @@ Fluxbaan requires read-only access to Flux CRDs and a small set of core Kubernet
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: fluxbaan
+  name: xafrun
 rules:
   # Flux source-controller CRDs
   - apiGroups: ["source.toolkit.fluxcd.io"]
@@ -42,15 +42,15 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: fluxbaan
+  name: xafrun
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: fluxbaan
+  name: xafrun
 subjects:
   - kind: ServiceAccount
-    name: fluxbaan
-    namespace: fluxbaan
+    name: xafrun
+    namespace: xafrun
 ```
 
 ## Permission explanations
@@ -64,7 +64,7 @@ subjects:
 | `daemonsets` | Used to find the `cilium` image tag to report the Cilium version. |
 
 !!! warning "ClusterRole scope"
-    Fluxbaan uses a **ClusterRole** (not a namespaced Role) so it can see Flux resources in all namespaces. If you want to restrict it to specific namespaces, replace the ClusterRoleBinding with per-namespace RoleBindings, but note that `nodes` is a cluster-scoped resource and always requires a ClusterRole.
+    Xafrun uses a **ClusterRole** (not a namespaced Role) so it can see Flux resources in all namespaces. If you want to restrict it to specific namespaces, replace the ClusterRoleBinding with per-namespace RoleBindings, but note that `nodes` is a cluster-scoped resource and always requires a ClusterRole.
 
 !!! note "Read-only"
-    Fluxbaan never mutates cluster state. All verbs are `get`, `list`, and `watch` only.
+    Xafrun never mutates cluster state. All verbs are `get`, `list`, and `watch` only.

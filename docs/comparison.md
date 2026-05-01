@@ -1,13 +1,13 @@
 # Comparison
 
-How does Fluxbaan compare to other tools in the Flux CD ecosystem?
+How does Xafrun compare to other tools in the Flux CD ecosystem?
 
 !!! note "Honest assessment"
-    This table reflects the current state of Fluxbaan (alpha). Items marked TODO are on the [roadmap](roadmap.md).
+    This table reflects the current state of Xafrun (alpha). Items marked TODO are on the [roadmap](roadmap.md).
 
 ## Feature comparison
 
-| Feature | **Fluxbaan** | Weave GitOps OSS | Capacitor | Headlamp | `flux` CLI |
+| Feature | **Xafrun** | Weave GitOps OSS | Capacitor | Headlamp | `flux` CLI |
 |---------|:---:|:---:|:---:|:---:|:---:|
 | **Real-time updates** | ✅ SSE | ✅ | ✅ polling | ❌ | ❌ |
 | **Dependency graph** | ✅ | ❌ | ❌ | ❌ | ❌ |
@@ -31,5 +31,5 @@ How does Fluxbaan compare to other tools in the Flux CD ecosystem?
 **`flux` CLI**
 : The official Flux command-line tool. Excellent for power users; no visual graph; no persistent UI.
 
-**Fluxbaan's unique value**
+**Xafrun's unique value**
 : The only tool in this list that provides a **real-time interactive dependency graph** (GitRepository → Kustomization → HelmRelease) with live health colours, served as a lightweight web app.

@@ -1,12 +1,12 @@
 apiVersion: v2
-name: fluxbaan
+name: xafrun
 description: A real-time visual GitOps dashboard for Flux CD
 type: application
 version: 0.1.0
 appVersion: "0.1.0"
-home: https://github.com/omilun/Fluxbaan
+home: https://github.com/omilun/Xafrun
 sources:
-  - https://github.com/omilun/Fluxbaan
+  - https://github.com/omilun/Xafrun
 maintainers:
   - name: omilun
     url: https://github.com/omilun

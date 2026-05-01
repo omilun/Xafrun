@@ -1,4 +1,4 @@
-module github.com/omilun/fluxbaan
+module github.com/omilun/xafrun
 
 go 1.26.0
 

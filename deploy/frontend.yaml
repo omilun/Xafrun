@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fluxbaan-frontend
-  namespace: fluxbaan
+  name: xafrun-frontend
+  namespace: xafrun
   labels:
-    app.kubernetes.io/name: fluxbaan
+    app.kubernetes.io/name: xafrun
     app.kubernetes.io/component: frontend
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: kustomize
@@ -12,12 +12,12 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: fluxbaan
+      app.kubernetes.io/name: xafrun
       app.kubernetes.io/component: frontend
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: fluxbaan
+        app.kubernetes.io/name: xafrun
         app.kubernetes.io/component: frontend
         app.kubernetes.io/version: "0.1.0"
         app.kubernetes.io/managed-by: kustomize
@@ -30,7 +30,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: frontend
-          image: ghcr.io/omilun/fluxbaan-frontend:0.1.0
+          image: ghcr.io/omilun/xafrun-frontend:0.1.0
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -44,7 +44,7 @@ spec:
               protocol: TCP
           env:
             - name: BACKEND_URL
-              value: "http://fluxbaan-backend.fluxbaan.svc.cluster.local:8080"
+              value: "http://xafrun-backend.xafrun.svc.cluster.local:8080"
           livenessProbe:
             tcpSocket:
               port: 3000
@@ -74,16 +74,16 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: fluxbaan-frontend
-  namespace: fluxbaan
+  name: xafrun-frontend
+  namespace: xafrun
   labels:
-    app.kubernetes.io/name: fluxbaan
+    app.kubernetes.io/name: xafrun
     app.kubernetes.io/component: frontend
     app.kubernetes.io/managed-by: kustomize
 spec:
   type: ClusterIP
   selector:
-    app.kubernetes.io/name: fluxbaan
+    app.kubernetes.io/name: xafrun
     app.kubernetes.io/component: frontend
   ports:
     - name: http

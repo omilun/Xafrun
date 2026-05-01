@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: fluxbaan-backend
-  namespace: fluxbaan
+  name: xafrun-backend
+  namespace: xafrun
   labels:
-    app.kubernetes.io/name: fluxbaan
+    app.kubernetes.io/name: xafrun
     app.kubernetes.io/component: backend
     app.kubernetes.io/version: "0.1.0"
     app.kubernetes.io/managed-by: kustomize
@@ -12,17 +12,17 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/name: fluxbaan
+      app.kubernetes.io/name: xafrun
       app.kubernetes.io/component: backend
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: fluxbaan
+        app.kubernetes.io/name: xafrun
         app.kubernetes.io/component: backend
         app.kubernetes.io/version: "0.1.0"
         app.kubernetes.io/managed-by: kustomize
     spec:
-      serviceAccountName: fluxbaan-backend
+      serviceAccountName: xafrun-backend
       securityContext:
         runAsNonRoot: true
         runAsUser: 65532
@@ -31,7 +31,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: backend
-          image: ghcr.io/omilun/fluxbaan-backend:0.1.0
+          image: ghcr.io/omilun/xafrun-backend:0.1.0
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
@@ -77,16 +77,16 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: fluxbaan-backend
-  namespace: fluxbaan
+  name: xafrun-backend
+  namespace: xafrun
   labels:
-    app.kubernetes.io/name: fluxbaan
+    app.kubernetes.io/name: xafrun
     app.kubernetes.io/component: backend
     app.kubernetes.io/managed-by: kustomize
 spec:
   type: ClusterIP
   selector:
-    app.kubernetes.io/name: fluxbaan
+    app.kubernetes.io/name: xafrun
     app.kubernetes.io/component: backend
   ports:
     - name: http

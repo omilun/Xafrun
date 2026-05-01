@@ -1,4 +1,4 @@
-// Package api provides the HTTP handlers for the Fluxbaan backend.
+// Package api provides the HTTP handlers for the Xafrun backend.
 package api
 
 import (

@@ -1,6 +1,6 @@
 # The Dashboard
 
-When you open Fluxbaan, the main area shows an interactive dependency graph of every Flux resource in your cluster (or the selected namespaces).
+When you open Xafrun, the main area shows an interactive dependency graph of every Flux resource in your cluster (or the selected namespaces).
 
 ## Graph layout
 

@@ -1,7 +1,7 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-namespace: fluxbaan
+namespace: xafrun
 
 resources:
   - namespace.yaml
@@ -11,11 +11,11 @@ resources:
   - frontend.yaml
 
 commonLabels:
-  app.kubernetes.io/name: fluxbaan
+  app.kubernetes.io/name: xafrun
   app.kubernetes.io/managed-by: kustomize
 
 images:
-  - name: ghcr.io/omilun/fluxbaan-backend
+  - name: ghcr.io/omilun/xafrun-backend
     newTag: "0.1.0"
-  - name: ghcr.io/omilun/fluxbaan-frontend
+  - name: ghcr.io/omilun/xafrun-frontend
     newTag: "0.1.0"

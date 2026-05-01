@@ -70,12 +70,12 @@ export function NewsTicker({ nodes, info }: NewsTickerProps) {
     >
       {/* inject keyframe animation */}
       <style>{`
-        @keyframes fluxbaan-ticker {
+        @keyframes xafrun-ticker {
           0%   { transform: translateX(100vw); }
           100% { transform: translateX(-100%); }
         }
-        .fluxbaan-ticker-text {
-          animation: fluxbaan-ticker ${duration}s linear infinite;
+        .xafrun-ticker-text {
+          animation: xafrun-ticker ${duration}s linear infinite;
           white-space: nowrap;
           display: inline-block;
         }
@@ -83,7 +83,7 @@ export function NewsTicker({ nodes, info }: NewsTickerProps) {
 
       {/* scrolling text */}
       <div className="flex-1 overflow-hidden relative h-full flex items-center">
-        <span className={`fluxbaan-ticker-text text-xs font-medium ${accent.text} pl-4`}>
+        <span className={`xafrun-ticker-text text-xs font-medium ${accent.text} pl-4`}>
           {tickerText}
         </span>
       </div>

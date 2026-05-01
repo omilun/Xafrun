@@ -17,7 +17,7 @@ import (
 	notifv1 "github.com/fluxcd/notification-controller/api/v1"
 	notifv1beta3 "github.com/fluxcd/notification-controller/api/v1beta3"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
-	"github.com/omilun/fluxbaan/pkg/models"
+	"github.com/omilun/xafrun/pkg/models"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	toolscache "k8s.io/client-go/tools/cache"

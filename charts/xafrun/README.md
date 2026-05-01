@@ -1,6 +1,6 @@
-# fluxbaan Helm Chart
+# xafrun Helm Chart
 
-A Helm chart for **Fluxbaan** — a real-time visual GitOps dashboard for Flux CD.
+A Helm chart for **Xafrun** — a real-time visual GitOps dashboard for Flux CD.
 
 ## Prerequisites
 
@@ -14,29 +14,29 @@ A Helm chart for **Fluxbaan** — a real-time visual GitOps dashboard for Flux C
 ### From OCI registry (recommended)
 
 ```bash
-helm install fluxbaan oci://ghcr.io/omilun/charts/fluxbaan \
-  --namespace fluxbaan \
+helm install xafrun oci://ghcr.io/omilun/charts/xafrun \
+  --namespace xafrun \
   --create-namespace
 ```
 
 ### From a local clone
 
 ```bash
-helm install fluxbaan ./charts/fluxbaan \
-  --namespace fluxbaan \
+helm install xafrun ./charts/xafrun \
+  --namespace xafrun \
   --create-namespace
 ```
 
 ### Upgrade
 
 ```bash
-helm upgrade fluxbaan ./charts/fluxbaan --namespace fluxbaan
+helm upgrade xafrun ./charts/xafrun --namespace xafrun
 ```
 
 ### Uninstall
 
 ```bash
-helm uninstall fluxbaan --namespace fluxbaan
+helm uninstall xafrun --namespace xafrun
 ```
 
 > **Note:** The ClusterRole and ClusterRoleBinding are cluster-scoped. They are removed automatically on `helm uninstall`.
@@ -45,22 +45,22 @@ helm uninstall fluxbaan --namespace fluxbaan
 
 | Method | Command |
 |--------|---------|
-| Port-forward (default) | `kubectl port-forward -n fluxbaan svc/fluxbaan-frontend 80:80` |
-| Ingress | `--set ingress.enabled=true --set ingress.host=fluxbaan.example.com` |
+| Port-forward (default) | `kubectl port-forward -n xafrun svc/xafrun-frontend 80:80` |
+| Ingress | `--set ingress.enabled=true --set ingress.host=xafrun.example.com` |
 | Gateway API HTTPRoute | `--set httpRoute.enabled=true --set 'httpRoute.parentRefs[0].name=main-gateway'` |
 
 ## Values
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `backend.image.repository` | `ghcr.io/omilun/fluxbaan-backend` | Backend image repository |
+| `backend.image.repository` | `ghcr.io/omilun/xafrun-backend` | Backend image repository |
 | `backend.image.tag` | `""` | Image tag; defaults to `.Chart.AppVersion` |
 | `backend.image.pullPolicy` | `IfNotPresent` | Image pull policy |
 | `backend.replicas` | `1` | Backend replica count |
 | `backend.resources` | see values | CPU/memory requests and limits |
 | `backend.service.port` | `8080` | Backend service port |
 | `backend.clusterName` | `""` | Cluster name shown in the UI ticker |
-| `frontend.image.repository` | `ghcr.io/omilun/fluxbaan-frontend` | Frontend image repository |
+| `frontend.image.repository` | `ghcr.io/omilun/xafrun-frontend` | Frontend image repository |
 | `frontend.image.tag` | `""` | Image tag; defaults to `.Chart.AppVersion` |
 | `frontend.image.pullPolicy` | `IfNotPresent` | Image pull policy |
 | `frontend.replicas` | `1` | Frontend replica count |
@@ -75,7 +75,7 @@ helm uninstall fluxbaan --namespace fluxbaan
 | `ingress.enabled` | `false` | Enable Ingress resource |
 | `ingress.className` | `""` | IngressClass name |
 | `ingress.annotations` | `{}` | Ingress annotations |
-| `ingress.host` | `fluxbaan.local` | Ingress hostname |
+| `ingress.host` | `xafrun.local` | Ingress hostname |
 | `ingress.tls` | `[]` | TLS configuration |
 | `httpRoute.enabled` | `false` | Enable Gateway API HTTPRoute |
 | `httpRoute.parentRefs` | `[]` | Gateway parentRefs |

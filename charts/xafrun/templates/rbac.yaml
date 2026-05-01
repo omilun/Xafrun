@@ -2,9 +2,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "fluxbaan.fullname" . }}-reader
+  name: {{ include "xafrun.fullname" . }}-reader
   labels:
-    {{- include "fluxbaan.labels" . | nindent 4 }}
+    {{- include "xafrun.labels" . | nindent 4 }}
 rules:
   # Flux source-controller CRDs
   - apiGroups: ["source.toolkit.fluxcd.io"]
@@ -37,25 +37,25 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "fluxbaan.fullname" . }}-reader
+  name: {{ include "xafrun.fullname" . }}-reader
   labels:
-    {{- include "fluxbaan.labels" . | nindent 4 }}
+    {{- include "xafrun.labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: {{ include "fluxbaan.serviceAccountName" . }}
+    name: {{ include "xafrun.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: {{ include "fluxbaan.fullname" . }}-reader
+  name: {{ include "xafrun.fullname" . }}-reader
   apiGroup: rbac.authorization.k8s.io
 {{- if .Values.rbac.allowReconcile }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "fluxbaan.fullname" . }}-reconciler
+  name: {{ include "xafrun.fullname" . }}-reconciler
   labels:
-    {{- include "fluxbaan.labels" . | nindent 4 }}
+    {{- include "xafrun.labels" . | nindent 4 }}
 rules:
   # Patch annotations & spec.suspend for reconcile/suspend/resume actions.
   - apiGroups: ["source.toolkit.fluxcd.io"]
@@ -74,16 +74,16 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "fluxbaan.fullname" . }}-reconciler
+  name: {{ include "xafrun.fullname" . }}-reconciler
   labels:
-    {{- include "fluxbaan.labels" . | nindent 4 }}
+    {{- include "xafrun.labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: {{ include "fluxbaan.serviceAccountName" . }}
+    name: {{ include "xafrun.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
-  name: {{ include "fluxbaan.fullname" . }}-reconciler
+  name: {{ include "xafrun.fullname" . }}-reconciler
   apiGroup: rbac.authorization.k8s.io
 {{- end }}
 {{- end }}

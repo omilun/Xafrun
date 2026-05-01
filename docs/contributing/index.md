@@ -1,10 +1,10 @@
 # How to Contribute
 
-Thank you for your interest in contributing to Fluxbaan! Contributions of all kinds are welcome — bug reports, documentation improvements, feature requests, and code changes.
+Thank you for your interest in contributing to Xafrun! Contributions of all kinds are welcome — bug reports, documentation improvements, feature requests, and code changes.
 
 ## Ways to contribute
 
-- **Bug reports** — open an [issue](https://github.com/omilun/Fluxbaan/issues) with steps to reproduce.
+- **Bug reports** — open an [issue](https://github.com/omilun/Xafrun/issues) with steps to reproduce.
 - **Feature requests** — open an issue describing the use case before writing code.
 - **Documentation** — this site lives in `docs/`; edit any page and open a PR.
 - **Code changes** — see [Development setup](dev-setup.md) for how to build and test locally.

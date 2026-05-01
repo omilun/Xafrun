@@ -1,6 +1,6 @@
 backend:
   image:
-    repository: ghcr.io/omilun/fluxbaan-backend
+    repository: ghcr.io/omilun/xafrun-backend
     # Overrides the image tag. Defaults to .Chart.AppVersion when empty.
     tag: ""
     pullPolicy: IfNotPresent
@@ -19,7 +19,7 @@ backend:
 
 frontend:
   image:
-    repository: ghcr.io/omilun/fluxbaan-frontend
+    repository: ghcr.io/omilun/xafrun-frontend
     # Overrides the image tag. Defaults to .Chart.AppVersion when empty.
     tag: ""
     pullPolicy: IfNotPresent
@@ -67,7 +67,7 @@ ingress:
   enabled: false
   className: ""
   annotations: {}
-  host: fluxbaan.local
+  host: xafrun.local
   tls: []
 
 httpRoute:
@@ -79,7 +79,7 @@ httpRoute:
   parentRefs: []
   # Hostnames for the HTTPRoute, e.g.:
   # hostnames:
-  #   - fluxbaan.example.com
+  #   - xafrun.example.com
   hostnames: []
 
 networkPolicy:

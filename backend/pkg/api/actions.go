@@ -13,7 +13,7 @@ import (
 	kustomizev1 "github.com/fluxcd/kustomize-controller/api/v1"
 	sourcev1 "github.com/fluxcd/source-controller/api/v1"
 	"github.com/gin-gonic/gin"
-	"github.com/omilun/fluxbaan/pkg/models"
+	"github.com/omilun/xafrun/pkg/models"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )

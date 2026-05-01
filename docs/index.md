@@ -1,12 +1,12 @@
-# Fluxbaan: see your Flux.
+# Xafrun: see your Flux.
 
-**Fluxbaan** is a real-time visual GitOps dashboard for [Flux CD](https://fluxcd.io). It turns the abstract dependency chain of Flux resources into an interactive, colour-coded graph — so you can understand the state of your entire GitOps pipeline at a glance, without running a single `kubectl` command.
+**Xafrun** is a real-time visual GitOps dashboard for [Flux CD](https://fluxcd.io). It turns the abstract dependency chain of Flux resources into an interactive, colour-coded graph — so you can understand the state of your entire GitOps pipeline at a glance, without running a single `kubectl` command.
 
 <!-- Screenshots will live in docs/assets/ once the project reaches beta. A dashboard screenshot (`assets/dashboard.png`) will be placed here. -->
 
-## Why Fluxbaan?
+## Why Xafrun?
 
-Flux is a world-class GitOps engine, but its built-in visibility story is fragmented: CLIs for power users, generic dashboards cluttered with non-GitOps noise, and no first-class dependency graph. Fluxbaan fills that gap.
+Flux is a world-class GitOps engine, but its built-in visibility story is fragmented: CLIs for power users, generic dashboards cluttered with non-GitOps noise, and no first-class dependency graph. Xafrun fills that gap.
 
 ## Features
 
@@ -27,4 +27,4 @@ Flux is a world-class GitOps engine, but its built-in visibility story is fragme
 ---
 
 !!! tip "Alpha software"
-    Fluxbaan is in early development. The graph and status ticker work well in practice, but some advanced features (log streaming, multi-cluster, auth) are on the [roadmap](roadmap.md). See the [FAQ](faq.md) for more.
+    Xafrun is in early development. The graph and status ticker work well in practice, but some advanced features (log streaming, multi-cluster, auth) are on the [roadmap](roadmap.md). See the [FAQ](faq.md) for more.

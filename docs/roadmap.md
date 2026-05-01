@@ -1,9 +1,9 @@
 # Roadmap
 
-Fluxbaan is under active development. Below is the outward-facing roadmap, organised into six tracks (A–F). Items within each track are roughly prioritised top-to-bottom.
+Xafrun is under active development. Below is the outward-facing roadmap, organised into six tracks (A–F). Items within each track are roughly prioritised top-to-bottom.
 
 !!! note
-    This is the current plan; it may change based on feedback and contributions. Check the [GitHub issues](https://github.com/omilun/Fluxbaan/issues) for the most up-to-date status.
+    This is the current plan; it may change based on feedback and contributions. Check the [GitHub issues](https://github.com/omilun/Xafrun/issues) for the most up-to-date status.
 
 ## Track A — Graph fidelity
 
@@ -39,6 +39,6 @@ Fluxbaan is under active development. Below is the outward-facing roadmap, organ
 ## Track F — Developer experience
 
 - [x] Helm chart published as OCI artefact to the in-cluster Zot registry
-- [ ] OCI chart on `ghcr.io/omilun/charts/fluxbaan`
+- [ ] OCI chart on `ghcr.io/omilun/charts/xafrun`
 - [ ] GitHub Actions CI with automated image builds and chart releases
 - [ ] `flux` CLI plugin (`flux dashboard`)

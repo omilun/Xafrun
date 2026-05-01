@@ -1,10 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "fluxbaan.fullname" . }}-backend
+  name: {{ include "xafrun.fullname" . }}-backend
   namespace: {{ .Release.Namespace }}
   labels:
-    {{- include "fluxbaan.labels" . | nindent 4 }}
+    {{- include "xafrun.labels" . | nindent 4 }}
     app.kubernetes.io/component: backend
   {{- with .Values.podAnnotations }}
   annotations:
@@ -14,11 +14,11 @@ spec:
   replicas: {{ .Values.backend.replicas }}
   selector:
     matchLabels:
-      {{- include "fluxbaan.backend.selectorLabels" . | nindent 6 }}
+      {{- include "xafrun.backend.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "fluxbaan.backend.selectorLabels" . | nindent 8 }}
+        {{- include "xafrun.backend.selectorLabels" . | nindent 8 }}
         app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
         {{- with .Values.podLabels }}
         {{- toYaml . | nindent 8 }}
@@ -28,7 +28,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
     spec:
-      serviceAccountName: {{ include "fluxbaan.serviceAccountName" . }}
+      serviceAccountName: {{ include "xafrun.serviceAccountName" . }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       {{- with .Values.nodeSelector }}
@@ -45,7 +45,7 @@ spec:
       {{- end }}
       containers:
         - name: backend
-          image: {{ include "fluxbaan.backendImage" . }}
+          image: {{ include "xafrun.backendImage" . }}
           imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
           securityContext:
             {{- toYaml .Values.containerSecurityContext | nindent 12 }}

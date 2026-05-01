@@ -9,9 +9,9 @@ import (
 const openAPISpec = `{
   "openapi": "3.1.0",
   "info": {
-    "title": "Fluxbaan API",
+    "title": "Xafrun API",
     "version": "0.2.0",
-    "description": "Backend API for Fluxbaan — a Flux CD visualisation dashboard."
+    "description": "Backend API for Xafrun — a Flux CD visualisation dashboard."
   },
   "paths": {
     "/healthz": {

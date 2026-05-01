@@ -1,6 +1,6 @@
 # Quick Start
 
-Get Fluxbaan running against a local `kind` cluster in about 60 seconds.
+Get Xafrun running against a local `kind` cluster in about 60 seconds.
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@ Get Fluxbaan running against a local `kind` cluster in about 60 seconds.
 ## 1. Create a local cluster
 
 ```bash
-kind create cluster --name fluxbaan-demo
+kind create cluster --name xafrun-demo
 ```
 
 ## 2. Install Flux CD
@@ -24,25 +24,25 @@ flux install
 !!! note
     If you don't have the `flux` CLI, install it with `brew install fluxcd/tap/flux` or follow the [official guide](https://fluxcd.io/flux/installation/).
 
-## 3. Install Fluxbaan
+## 3. Install Xafrun
 
 === "Helm"
 
     ```bash
-    helm install fluxbaan oci://ghcr.io/omilun/charts/fluxbaan \
-      --namespace fluxbaan --create-namespace
+    helm install xafrun oci://ghcr.io/omilun/charts/xafrun \
+      --namespace xafrun --create-namespace
     ```
 
 === "Kustomize"
 
     ```bash
-    kubectl apply -k github.com/omilun/Fluxbaan//deploy?ref=v0.1.0
+    kubectl apply -k github.com/omilun/Xafrun//deploy?ref=v0.1.0
     ```
 
 ## 4. Port-forward and open
 
 ```bash
-kubectl port-forward -n fluxbaan svc/fluxbaan 8080:8080 3000:3000 &
+kubectl port-forward -n xafrun svc/xafrun 8080:8080 3000:3000 &
 open http://localhost:3000
 ```
 

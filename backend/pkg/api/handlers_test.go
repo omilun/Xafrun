@@ -26,8 +26,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	crfake "sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	"github.com/omilun/fluxbaan/pkg/models"
-	"github.com/omilun/fluxbaan/pkg/watcher"
+	"github.com/omilun/xafrun/pkg/models"
+	"github.com/omilun/xafrun/pkg/watcher"
 )
 
 func init() {

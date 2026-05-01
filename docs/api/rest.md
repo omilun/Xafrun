@@ -1,6 +1,6 @@
 # REST Endpoints
 
-The Fluxbaan backend exposes three HTTP endpoints, all under `/api/`.
+The Xafrun backend exposes three HTTP endpoints, all under `/api/`.
 
 ---
 
