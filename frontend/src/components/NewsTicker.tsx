@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronDown, Lighthouse } from 'lucide-react';
+import { ChevronDown, TowerControl } from 'lucide-react';
 import { FluxNode, ClusterInfo } from '../types';
 
 interface NewsTickerProps {
@@ -56,7 +56,7 @@ export function NewsTicker({ nodes, info }: NewsTickerProps) {
         onClick={() => setUserExpanded(true)}
         title="Show Status"
       >
-        <Lighthouse className="w-5 h-5" />
+        <TowerControl className="w-5 h-5" />
       </button>
     );
   }
@@ -79,7 +79,7 @@ export function NewsTicker({ nodes, info }: NewsTickerProps) {
       `}</style>
 
       <div className={`px-2 h-full flex items-center bg-white/40 dark:bg-black/20 ${colorClass} shrink-0`}>
-        <Lighthouse className="w-4 h-4" />
+        <TowerControl className="w-4 h-4" />
       </div>
 
       <div className="flex-1 overflow-hidden relative h-full flex items-center min-w-[300px]">
