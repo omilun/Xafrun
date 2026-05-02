@@ -146,6 +146,14 @@ func (w *Watcher) Rebuild(ctx context.Context) {
 
 type sourceKey struct{ kind, namespace, name string }
 
+// sourceRef is a lightweight replacement for sourcev1.CrossNamespaceSourceReference
+// which was removed in source-controller API v1.8+.
+type sourceRef struct {
+	Kind      string
+	Name      string
+	Namespace string
+}
+
 func (w *Watcher) rebuild(ctx context.Context) {
 	start := time.Now()
 
@@ -156,7 +164,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 
 	sourceByRef := map[sourceKey]string{}
 
-	addSourceNode := func(uid, name, ns, kind string, conditions []metav1.Condition, revision string, suspended bool, srcRef *sourcev1.CrossNamespaceSourceReference) {
+	addSourceNode := func(uid, name, ns, kind string, conditions []metav1.Condition, revision string, suspended bool, srcRef *sourceRef) {
 		graph.Nodes = append(graph.Nodes, models.Node{
 			ID:        uid,
 			Type:      models.NodeSource,
@@ -253,12 +261,11 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				rev = r.Status.Artifact.Revision
 			}
 			
-			// Convert LocalHelmChartSourceReference to CrossNamespaceSourceReference
-			srcRef := &sourcev1.CrossNamespaceSourceReference{
-				APIVersion: r.Spec.SourceRef.APIVersion,
-				Kind:       r.Spec.SourceRef.Kind,
-				Name:       r.Spec.SourceRef.Name,
-				Namespace:  r.Namespace,
+			// Convert LocalHelmChartSourceReference to sourceRef
+			srcRef := &sourceRef{
+				Kind:      r.Spec.SourceRef.Kind,
+				Name:      r.Spec.SourceRef.Name,
+				Namespace: r.Namespace,
 			}
 			
 			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmChart", r.Status.Conditions, rev, r.Spec.Suspend, srcRef)

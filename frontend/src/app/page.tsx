@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { Activity, RefreshCcw, Search } from 'lucide-react';
 import type { ReactFlowInstance } from 'reactflow';
 import { AppList } from '@/components/AppList';
@@ -133,10 +133,7 @@ export default function Home() {
 
           {!selectedApp && graph && (
             <div className="flex items-center gap-6 border-l border-slate-100 dark:border-gray-800 pl-8">
-              <StatPill label="Total" value={stats.total} cls="text-slate-600 dark:text-gray-300" />
-              <StatPill label="Healthy" value={stats.healthy} cls="text-green-600 dark:text-green-400" />
-              <StatPill label="Unhealthy" value={stats.unhealthy} cls="text-red-600 dark:text-red-400" />
-              <StatPill label="Progressing" value={stats.progressing} cls="text-blue-600 dark:text-blue-400" />
+
             </div>
           )}
         </div>
