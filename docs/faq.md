@@ -22,17 +22,23 @@ No. Xafrun is built exclusively against the **Flux v2** API (`source.toolkit.flu
 
 ## Is Xafrun read-only?
 
-Yes, always. Xafrun never writes to the Kubernetes API. Its ClusterRole grants only `get`, `list`, and `watch` verbs. There is no way to trigger a reconciliation or modify resources through the UI.
+No. Xafrun supports three write operations on Flux resources:
+
+- **Reconcile** — triggers an immediate reconciliation by setting the `reconcile.fluxcd.io/requestedAt` annotation.
+- **Suspend** — sets `spec.suspend: true` to pause reconciliation.
+- **Resume** — sets `spec.suspend: false` to re-enable reconciliation.
+
+These operations are available in the ResourceDrawer (Overview tab) when you click on any Flux resource. All other reads (YAML, events, logs) are strictly read-only. The ServiceAccount's RBAC is scoped accordingly — `get/list/watch` for all resources, `patch` only for Flux CRDs.
 
 ---
 
 ## Is Xafrun ready for production?
 
-Honestly: **alpha quality**. The graph and status ticker work well in practice, but:
+Honestly: **beta quality**. The core dashboard, real-time updates, YAML/Events drawer, and reconcile/suspend actions work well in practice, but:
 
 - There is no built-in authentication — expose it behind an auth proxy in shared environments.
-- The Helm chart and OCI image are not yet published.
-- Some planned features (log streaming, multi-cluster, history) are not implemented.
+- The Helm chart and OCI image are not yet published to `ghcr.io` (install from the in-cluster Zot registry in the meantime).
+- Some planned features (multi-cluster, history, YAML edit+apply) are not implemented.
 
 See the [Roadmap](roadmap.md) for what's coming. Feedback and contributions are welcome!
 

@@ -80,8 +80,8 @@ nav:
       - Kustomize: getting-started/install-kustomize.md
       - Local development: getting-started/local-dev.md
   - User Guide:
-    - The dashboard: user-guide/dashboard.md
-    - Filtering by namespace: user-guide/namespaces.md
+    - App list: user-guide/dashboard.md
+    - App detail & resource graph: user-guide/app-detail.md
     - Status ticker: user-guide/status-ticker.md
     - Resource statuses: user-guide/statuses.md
   - Architecture:

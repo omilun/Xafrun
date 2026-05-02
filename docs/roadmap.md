@@ -7,10 +7,12 @@ Xafrun is under active development. Below is the outward-facing roadmap, organis
 
 ## Track A — Graph fidelity
 
-- [ ] HelmRelease → parent Kustomization edges
+- [x] HelmRelease nodes visible in the app list
+- [x] Node detail panel — **ResourceDrawer** with Overview / YAML / Events tabs (click any node)
+- [x] Kustomization inventory parsed into child nodes in the detail graph
 - [ ] `OCIRepository` and `HelmRepository` source nodes
-- [ ] Node detail panel (click a node to see full YAML status, inventory list, last-applied revision)
 - [ ] Kustomization `dependsOn` edges
+- [ ] HelmRelease → parent Kustomization edges
 
 ## Track B — History & persistence
 
@@ -20,8 +22,8 @@ Xafrun is under active development. Below is the outward-facing roadmap, organis
 
 ## Track C — Log streaming
 
-- [ ] Stream controller logs (source/kustomize/helm) for a selected resource
-- [ ] Stream Pod logs from Kustomization inventory items
+- [x] Stream Pod logs from inventory items (`GET /api/logs/:namespace/:name` — SSE)
+- [ ] Stream controller logs (source-controller, kustomize-controller, helm-controller)
 - [ ] Log search / filter
 
 ## Track D — Multi-cluster
@@ -36,9 +38,16 @@ Xafrun is under active development. Below is the outward-facing roadmap, organis
 - [ ] Read-only vs admin role distinction (for future write operations)
 - [ ] Audit log for dashboard access
 
+## Track G — Mutations (write operations)
+
+- [x] **Reconcile** — trigger Flux reconciliation via annotation patch
+- [x] **Suspend / Resume** — pause and resume Flux resource reconciliation
+- [ ] YAML edit + apply (write changes back to the cluster)
+- [ ] Git-vs-cluster diff view
+
 ## Track F — Developer experience
 
 - [x] Helm chart published as OCI artefact to the in-cluster Zot registry
+- [x] In-cluster CI via Argo Workflows + Argo Events (no GitHub Actions required)
 - [ ] OCI chart on `ghcr.io/omilun/charts/xafrun`
-- [ ] GitHub Actions CI with automated image builds and chart releases
 - [ ] `flux` CLI plugin (`flux dashboard`)

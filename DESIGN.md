@@ -52,15 +52,19 @@ Flux CD is a world-class GitOps engine, but its visibility is fragmented. Unlike
 
 ## 4. Implementation Roadmap
 
-### Phase 1: Real-time Visualizer (Completed ✅)
+### Phase 1: Real-time Visualizer + ArgoCD-style UX (Completed ✅)
 - [x] Scaffold Go Backend with Flux API support.
 - [x] Scaffold Next.js Frontend with React Flow.
 - [x] Implement "Tree Logic" (Source → Kustomization / HelmRelease mapping).
 - [x] Initial Dockerization (in-cluster BuildKit + Argo Workflows).
 - [x] Switch to **SSE + Informers** (replaces the original TanStack polling).
-- [x] Namespace sidebar with ancestor-aware filter.
 - [x] Status ticker (collapsible bottom bar with cluster metadata).
-- [x] Helm chart, GitHub Actions CI/release, signed images, MkDocs site.
+- [x] Helm chart, in-cluster CI/release, signed images, MkDocs site.
+- [x] **ArgoCD-style redesign** — two-screen UX: App List card grid → App Detail graph.
+- [x] **Inventory parsing** — Kustomization `node.inventory[]` entries rendered as child nodes.
+- [x] **ResourceDrawer** — tabbed panel (Overview / YAML / Events / Logs) on node click.
+- [x] **Reconcile / Suspend / Resume** — action buttons wired to backend PATCH endpoints.
+- [x] **Pod log streaming** — SSE-based log viewer for inventory Pod resources.
 
 ### Phase 2: Persistence & History (Next 🛠️)
 - [ ] **Database Schema:** Define tables for `reconciliation_history`, `resource_snapshots`, and `events`.
@@ -69,7 +73,7 @@ Flux CD is a world-class GitOps engine, but its visibility is fragmented. Unlike
 - [ ] **Frontend Timeline:** Add a "History" sidebar to the UI to browse past reconciliations.
 
 ### Phase 3: Advanced Features
-- [ ] **Log Streaming:** Directly stream Pod logs from the node side-drawer.
+- [ ] **YAML edit + apply** — write YAML changes back to the cluster (currently read-only).
 - [ ] **Diff View:** Show the YAML diff between what's in Git and what's in the Cluster.
 - [ ] **Multi-cluster:** Support for aggregating Flux state from multiple remote clusters.
 
