@@ -142,9 +142,18 @@ function EventsTab(props: { kind: string; namespace: string; name: string }) {
 }
 
 // ─── Diff Tab ────────────────────────────────────────────────────────────────
+const FLUX_KINDS = new Set([
+  'kustomization', 'helmrelease', 'gitrepository', 'helmrepository',
+  'helmchart', 'ocirepository', 'bucket', 'imagerepository', 'imageupdateautomation',
+]);
+
 function DiffTabInner({ kind, namespace, name }: { kind: string; namespace: string; name: string }) {
   const [diff, setDiff] = useState<{ live: string; desired: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const isFlux = FLUX_KINDS.has(kind.toLowerCase());
+  const leftTitle = isFlux ? 'Desired (spec)' : 'Desired (Git)';
+  const rightTitle = isFlux ? 'Actual (status)' : 'Live (Cluster)';
 
   useEffect(() => {
     fetchDiff(kind, namespace, name)
@@ -177,8 +186,8 @@ function DiffTabInner({ kind, namespace, name }: { kind: string; namespace: stri
         oldValue={diff.desired}
         newValue={diff.live}
         splitView={true}
-        leftTitle="Desired (Git)"
-        rightTitle="Live (Cluster)"
+        leftTitle={leftTitle}
+        rightTitle={rightTitle}
         useDarkTheme={true}
         styles={{
           variables: {

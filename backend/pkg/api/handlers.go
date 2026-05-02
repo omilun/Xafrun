@@ -243,7 +243,7 @@ func (h *Handler) GetYAML(c *gin.Context) {
 	}
 
 	// Fall back to unstructured for native k8s kinds.
-	gvr, err := resolveGVR(h.Discovery, kind)
+	resolved, err := resolveGVR(h.Discovery, kind)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "unknown kind: " + kind})
 		return
@@ -251,9 +251,9 @@ func (h *Handler) GetYAML(c *gin.Context) {
 
 	var u unstructured.Unstructured
 	u.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   gvr.Group,
-		Version: gvr.Version,
-		Kind:    strings.ToUpper(kind[:1]) + strings.ToLower(kind[1:]),
+		Group:   resolved.GVR.Group,
+		Version: resolved.GVR.Version,
+		Kind:    resolved.Kind,
 	})
 	if err := h.Client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &u); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -369,8 +369,8 @@ func (h *Handler) GetDiff(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 
-	// 1. Fetch Live Object
-	gvr, err := resolveGVR(h.Discovery, kind)
+	// 1. Fetch Live Object — use discovery to get canonical kind casing.
+	resolved, err := resolveGVR(h.Discovery, kind)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "unknown kind: " + kind})
 		return
@@ -378,9 +378,9 @@ func (h *Handler) GetDiff(c *gin.Context) {
 
 	var u unstructured.Unstructured
 	u.SetGroupVersionKind(schema.GroupVersionKind{
-		Group:   gvr.Group,
-		Version: gvr.Version,
-		Kind:    strings.ToUpper(kind[:1]) + strings.ToLower(kind[1:]),
+		Group:   resolved.GVR.Group,
+		Version: resolved.GVR.Version,
+		Kind:    resolved.Kind,
 	})
 	if err := h.Client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &u); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -403,7 +403,8 @@ func (h *Handler) GetDiff(c *gin.Context) {
 		}
 	}
 
-	// Fallback for Flux resources if no last-applied annotation exists
+	// Fallback for Flux resources (no last-applied annotation): compare spec (desired) vs status (actual).
+	// This lets users see e.g. chart version requested vs version actually deployed for a HelmRelease.
 	if desiredYAML == "" {
 		if fluxObj, ok := kindToObject(kind); ok {
 			if err := h.Client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, fluxObj); err == nil {
@@ -411,11 +412,11 @@ func (h *Handler) GetDiff(c *gin.Context) {
 				if spec, ok := m["spec"]; ok {
 					desiredBytes, _ := yaml.Marshal(spec)
 					desiredYAML = string(desiredBytes)
-					// Trim live to spec for fallback comparison
-					if liveSpec, ok := liveObj["spec"]; ok {
-						lb, _ := yaml.Marshal(liveSpec)
-						liveBytes = lb
-					}
+				}
+				// Live side: show status so users can see desired (spec) vs actual (status).
+				if status, ok := liveObj["status"]; ok {
+					lb, _ := yaml.Marshal(status)
+					liveBytes = lb
 				}
 			}
 		}
@@ -453,11 +454,17 @@ func cleanForDiff(obj map[string]interface{}) {
 	}
 }
 
-// resolveGVR finds the GroupVersionResource for a given kind name using discovery.
-func resolveGVR(dc discovery.DiscoveryInterface, kind string) (schema.GroupVersionResource, error) {
+// gvrWithKind bundles a GVR with its canonical API kind name (e.g. "HelmRelease", not "helmrelease").
+type gvrWithKind struct {
+	GVR  schema.GroupVersionResource
+	Kind string
+}
+
+// resolveGVR finds the GroupVersionResource and canonical Kind for a given kind name using discovery.
+func resolveGVR(dc discovery.DiscoveryInterface, kind string) (gvrWithKind, error) {
 	lists, err := dc.ServerPreferredResources()
 	if err != nil && lists == nil {
-		return schema.GroupVersionResource{}, err
+		return gvrWithKind{}, err
 	}
 	kindLower := strings.ToLower(kind)
 	for _, list := range lists {
@@ -467,15 +474,18 @@ func resolveGVR(dc discovery.DiscoveryInterface, kind string) (schema.GroupVersi
 		}
 		for _, r := range list.APIResources {
 			if strings.ToLower(r.Kind) == kindLower {
-				return schema.GroupVersionResource{
-					Group:    gv.Group,
-					Version:  gv.Version,
-					Resource: r.Name,
+				return gvrWithKind{
+					GVR: schema.GroupVersionResource{
+						Group:    gv.Group,
+						Version:  gv.Version,
+						Resource: r.Name,
+					},
+					Kind: r.Kind, // canonical casing from the API server
 				}, nil
 			}
 		}
 	}
-	return schema.GroupVersionResource{}, fmt.Errorf("kind %q not found", kind)
+	return gvrWithKind{}, fmt.Errorf("kind %q not found", kind)
 }
 
 // stripManagedFields removes the managedFields from a typed object by marshalling
