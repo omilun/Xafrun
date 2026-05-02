@@ -73,10 +73,10 @@ function layoutWithDagre(data: FluxGraph, appNode?: FluxNode): { nodes: Node[]; 
   g.setDefaultEdgeLabel(() => ({}));
   g.setGraph({
     rankdir: 'TB',
-    ranksep: 220,
-    nodesep: 100,
-    marginx: 80,
-    marginy: 80,
+    ranksep: 400,
+    nodesep: 250,
+    marginx: 100,
+    marginy: 100,
   });
 
   data.nodes.forEach((n) => {

@@ -19,6 +19,14 @@ const (
 	HealthUnknown     HealthStatus = "Unknown"
 )
 
+type SyncStatus string
+
+const (
+	SyncSynced    SyncStatus = "Synced"
+	SyncOutOfSync SyncStatus = "OutOfSync"
+	SyncUnknown   SyncStatus = "Unknown"
+)
+
 type Node struct {
 	ID        string       `json:"id"`
 	Type      NodeType     `json:"type"`
@@ -26,6 +34,7 @@ type Node struct {
 	Namespace string       `json:"namespace"`
 	Kind      string       `json:"kind"`
 	Status    HealthStatus `json:"status"`
+	Sync      SyncStatus   `json:"syncStatus,omitempty"`
 	Message   string       `json:"message,omitempty"`
 	// Flux-specific details
 	SourceRef  string   `json:"sourceRef,omitempty"`  // e.g. "GitRepository/flux-system"

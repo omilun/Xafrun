@@ -1,6 +1,28 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
-import { FluxNode, HealthStatus, InventoryItem } from '../types';
+import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { FluxNode, HealthStatus, SyncStatus, InventoryItem } from '../types';
+
+// ─── Sync Status Badge ────────────────────────────────────────────────────────
+function SyncStatusBadge({ status }: { status?: SyncStatus }) {
+  if (!status || status === 'Unknown') return null;
+  
+  if (status === 'Synced') {
+    return (
+      <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 uppercase tracking-tighter">
+        <CheckCircle2 className="w-2.5 h-2.5" />
+        Synced
+      </div>
+    );
+  }
+  
+  return (
+    <div className="flex items-center gap-1 text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 uppercase tracking-tighter">
+      <AlertCircle className="w-2.5 h-2.5" />
+      Out Of Sync
+    </div>
+  );
+}
 
 // ─── Flux resource node (existing) ────────────────────────────────────────────
 
@@ -100,10 +122,13 @@ const ResourceNode = ({ data }: { data: FluxNode }) => {
         aria-label={data.status}
       />
 
-      {/* Top row: kind label */}
-      <span className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 pr-4">
-        {data.kind}
-      </span>
+      {/* Top row: kind label and sync status */}
+      <div className="flex items-center justify-between">
+        <span className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 pr-4">
+          {data.kind}
+        </span>
+        <SyncStatusBadge status={data.syncStatus} />
+      </div>
 
       {/* Middle row: name */}
       <span className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate mt-0.5">

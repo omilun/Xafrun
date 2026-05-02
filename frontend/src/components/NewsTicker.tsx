@@ -10,7 +10,6 @@ interface NewsTickerProps {
 }
 
 export function NewsTicker({ nodes, info }: NewsTickerProps) {
-  // userExpanded: whether the user has manually expanded the bar
   const [userExpanded, setUserExpanded] = useState(false);
 
   const unhealthy = nodes.filter(
@@ -18,87 +17,79 @@ export function NewsTicker({ nodes, info }: NewsTickerProps) {
   );
   const isHealthy = unhealthy.length === 0;
 
-  // Auto-expand when unhealthy; user can manually expand when healthy
   const expanded = !isHealthy || userExpanded;
 
-  // Build ticker messages.
   const tickerText = useMemo(() => {
     if (!isHealthy) {
       return unhealthy
         .map((n) => {
           const raw = n.message ?? 'Unknown error';
           const msg = raw.length > 70 ? raw.slice(0, 70) + '…' : raw;
-          return `⚠ ${n.name} (${n.namespace}) is unhealthy. The error is: ${msg}`;
+          return `${n.name} is unhealthy. The error is: ${msg}`;
         })
-        .join('     •     ');
+        .join('  •  ');
     }
 
     if (info) {
       return (
-        `✔ The resources on cluster ${info.clusterName} are healthy.` +
-        `  Flux version: ${info.fluxVersion || '—'},` +
-        `  Kubernetes version: ${info.k8sVersion || '—'},` +
-        `  OS: ${info.osImage || '—'},` +
-        `  CNI: ${info.cniVersion || '—'},` +
-        `  Ingress Controller: ${info.ingressController || '—'}`
+        `The resources on cluster ${info.clusterName} are healthy. ` +
+        `Flux version: ${info.fluxVersion || '—'}, ` +
+        `Kubernetes version: ${info.k8sVersion || '—'}, ` +
+        `OS: Talos Linux ${info.osImage || '—'}, ` +
+        `CNI: ${info.cniVersion || '—'}, ` +
+        `Ingress Controller: ${info.ingressController || '—'}`
       );
     }
 
-    return '✔ All cluster resources are healthy.';
+    return 'All cluster resources are healthy.';
   }, [info, isHealthy, unhealthy]);
 
-  // Animation speed: ~80px per second, minimum 20s.
   const duration = Math.max(20, Math.ceil(tickerText.length * 0.15));
 
-  const accent = isHealthy
-    ? { bar: 'bg-green-500', bg: 'bg-green-50', border: 'border-green-200', text: 'text-green-800' }
-    : { bar: 'bg-red-500', bg: 'bg-red-50', border: 'border-red-200', text: 'text-red-800' };
+  const colorClass = isHealthy ? 'bg-green-500' : 'bg-red-500';
+  const bgClass = isHealthy ? 'bg-emerald-50/90' : 'bg-red-50/90';
+  const textClass = isHealthy ? 'text-emerald-900' : 'text-red-900';
 
-  /* ── Collapsed: thin coloured strip ── */
   if (!expanded) {
     return (
       <div
-        className={`fixed bottom-0 left-0 right-0 h-1.5 ${accent.bar} cursor-pointer z-50
-                    transition-all hover:h-2.5`}
+        className={`fixed bottom-4 left-4 w-32 h-1.5 ${colorClass} rounded-full cursor-pointer z-50 transition-all hover:h-2 shadow-lg`}
         onClick={() => setUserExpanded(true)}
-        title="Click to expand status bar"
+        title="Show Status"
       />
     );
   }
 
-  /* ── Expanded: full ticker ── */
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 h-9 ${accent.bg} ${accent.border}
-                  border-t flex items-center z-50 overflow-hidden select-none`}
+      className={`fixed bottom-4 left-4 h-9 max-w-[80vw] ${bgClass} border border-black/5 shadow-2xl
+                  rounded-xl flex items-center z-50 overflow-hidden select-none backdrop-blur-md transition-all`}
     >
-      {/* inject keyframe animation */}
       <style>{`
         @keyframes xafrun-ticker {
-          0%   { transform: translateX(100vw); }
-          100% { transform: translateX(-100%); }
+          0%   { transform: translateX(20px); }
+          100% { transform: translateX(calc(-100% + 400px)); }
         }
         .xafrun-ticker-text {
-          animation: xafrun-ticker ${duration}s linear infinite;
+          animation: xafrun-ticker ${duration}s linear infinite alternate;
           white-space: nowrap;
           display: inline-block;
         }
       `}</style>
 
-      {/* scrolling text */}
-      <div className="flex-1 overflow-hidden relative h-full flex items-center">
-        <span className={`xafrun-ticker-text text-xs font-medium ${accent.text} pl-4`}>
+      <div className={`w-2 h-full ${colorClass} shrink-0`} />
+
+      <div className="flex-1 overflow-hidden relative h-full flex items-center min-w-[300px]">
+        <span className={`xafrun-ticker-text text-[11px] font-bold ${textClass} px-4 uppercase tracking-tight`}>
           {tickerText}
         </span>
       </div>
 
-      {/* collapse button */}
       <button
         onClick={() => setUserExpanded(false)}
-        className={`px-2.5 h-full flex items-center hover:bg-black/5 transition-colors shrink-0 ${accent.text}`}
-        title="Collapse status bar"
+        className={`px-3 h-full flex items-center hover:bg-black/5 transition-colors shrink-0 ${textClass}`}
       >
-        <ChevronDown className="w-3.5 h-3.5" />
+        <ChevronDown className="w-4 h-4" />
       </button>
     </div>
   );

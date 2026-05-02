@@ -92,6 +92,7 @@ func main() {
 	handler := &api.Handler{
 		Watcher:   w,
 		Client:    ctrlClient,
+		Clientset: k8sClient.Clientset,
 		Discovery: discoveryClient,
 	}
 
@@ -113,6 +114,7 @@ func main() {
 		authenticated.GET("/api/openapi.json", handler.GetOpenAPI)
 		authenticated.GET("/api/yaml/:kind/:namespace/:name", handler.GetYAML)
 		authenticated.GET("/api/k8sevents/:kind/:namespace/:name", handler.GetK8sEvents)
+		authenticated.GET("/api/logs/:namespace/:name", handler.StreamLogs)
 		authenticated.POST("/api/reconcile/:kind/:namespace/:name", handler.Reconcile)
 		authenticated.POST("/api/suspend/:kind/:namespace/:name", handler.Suspend)
 		authenticated.POST("/api/resume/:kind/:namespace/:name", handler.Resume)

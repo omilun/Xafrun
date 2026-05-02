@@ -140,6 +140,56 @@ function EventsTab(props: { kind: string; namespace: string; name: string }) {
   return <EventsTabInner key={`${props.kind}/${props.namespace}/${props.name}`} {...props} />;
 }
 
+// ─── Logs Tab ─────────────────────────────────────────────────────────────────
+function LogsTabInner({ namespace, name }: { namespace: string; name: string }) {
+  const [logs, setLogs] = useState<string[]>([]);
+  const [connected, setConnected] = useState(false);
+
+  useEffect(() => {
+    const es = new EventSource(`/api/logs/${namespace}/${name}`);
+    es.addEventListener('log', (e: MessageEvent) => {
+      setLogs((prev) => [...prev.slice(-499), e.data]);
+      setConnected(true);
+    });
+    es.onerror = () => {
+      setConnected(false);
+      es.close();
+    };
+    return () => es.close();
+  }, [namespace, name]);
+
+  const logRef = React.useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight;
+  }, [logs]);
+
+  return (
+    <div className="flex flex-col h-full bg-slate-950 rounded-lg overflow-hidden border border-slate-800">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-900 border-b border-slate-800 shrink-0">
+        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-1.5">
+          <div className={`w-1.5 h-1.5 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
+          {connected ? 'Streaming Logs' : 'Disconnected'}
+        </span>
+        <button onClick={() => setLogs([])} className="text-[10px] text-slate-400 hover:text-white uppercase font-bold">Clear</button>
+      </div>
+      <div 
+        ref={logRef}
+        className="flex-1 overflow-auto p-3 text-[11px] font-mono leading-relaxed text-slate-300"
+      >
+        {logs.length === 0 ? (
+          <div className="flex items-center justify-center h-full text-slate-600 italic">Waiting for logs...</div>
+        ) : (
+          logs.map((l, i) => <div key={i} className="whitespace-pre-wrap mb-0.5">{l}</div>)
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LogsTab(props: { namespace: string; name: string }) {
+  return <LogsTabInner key={`${props.namespace}/${props.name}`} {...props} />;
+}
+
 // ─── Main Drawer ──────────────────────────────────────────────────────────────
 export function ResourceDrawer({ node, onClose }: ResourceDrawerProps) {
   const { showToast } = useToast();
@@ -172,11 +222,14 @@ export function ResourceDrawer({ node, onClose }: ResourceDrawerProps) {
     }
   };
 
-  const tabs: { id: TabId; label: string }[] = [
+  const tabs: { id: TabId | 'logs'; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'yaml', label: 'YAML' },
     { id: 'events', label: 'Events' },
   ];
+  if (meta?.kind === 'Pod') {
+    tabs.push({ id: 'logs', label: 'Logs' });
+  }
 
   // Use a keyed inner component to reset tab state on resource change
   return (
@@ -235,11 +288,11 @@ interface DrawerContentProps {
   canSuspend: boolean;
   actionLoading: string | null;
   onAction: (action: 'reconcile' | 'suspend' | 'resume') => void;
-  tabs: { id: TabId; label: string }[];
+  tabs: { id: TabId | 'logs'; label: string }[];
 }
 
 function DrawerContent({ meta, fluxNode, canSuspend, actionLoading, onAction, tabs }: DrawerContentProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('overview');
+  const [activeTab, setActiveTab] = useState<TabId | 'logs'>('overview');
 
   return (
     <>
@@ -323,6 +376,10 @@ function DrawerContent({ meta, fluxNode, canSuspend, actionLoading, onAction, ta
 
         {activeTab === 'events' && (
           <EventsTab kind={meta.kind} namespace={meta.namespace} name={meta.name} />
+        )}
+
+        {activeTab === 'logs' && (
+          <LogsTab namespace={meta.namespace} name={meta.name} />
         )}
       </div>
     </>

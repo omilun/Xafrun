@@ -163,12 +163,12 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			Namespace: ns,
 			Kind:      kind,
 			Status:    healthFromConditions(conditions),
+			Sync:      syncFromConditions(conditions),
 			Message:   messageFromConditions(conditions),
 			Revision:  revision,
 		})
 		sourceByRef[sourceKey{kind: kind, namespace: ns, name: name}] = uid
-	}
-
+		}
 	// GitRepositories
 	var gitRepos sourcev1.GitRepositoryList
 	if err := w.ctrlClient.List(ctx, &gitRepos); err == nil {
@@ -241,6 +241,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				Namespace: ks.Namespace,
 				Kind:      "Kustomization",
 				Status:    healthFromConditions(ks.Status.Conditions),
+				Sync:      syncFromConditions(ks.Status.Conditions),
 				Message:   messageFromConditions(ks.Status.Conditions),
 				SourceRef: fmt.Sprintf("%s/%s", ks.Spec.SourceRef.Kind, ks.Spec.SourceRef.Name),
 			}
@@ -281,6 +282,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				Namespace: hr.Namespace,
 				Kind:      "HelmRelease",
 				Status:    healthFromConditions(hr.Status.Conditions),
+				Sync:      syncFromConditions(hr.Status.Conditions),
 				Message:   messageFromConditions(hr.Status.Conditions),
 				Revision:  hr.Status.LastAttemptedRevision,
 			}
@@ -445,6 +447,29 @@ func healthFromConditions(conditions []metav1.Condition) models.HealthStatus {
 		}
 	}
 	return models.HealthUnknown
+}
+
+func syncFromConditions(conditions []metav1.Condition) models.SyncStatus {
+	// For Flux, we'll consider it "Synced" if the Ready condition is True.
+	// We'll consider it "OutOfSync" if there's a ReconciliationFailed reason
+	// or if the Ready condition is False and not due to dependency issues.
+	for _, c := range conditions {
+		if c.Type == "Ready" {
+			if c.Status == metav1.ConditionTrue {
+				return models.SyncSynced
+			}
+			if c.Reason == "ReconciliationFailed" || c.Reason == "Stalled" {
+				return models.SyncOutOfSync
+			}
+		}
+	}
+	// Also check for specific drift detection if enabled.
+	for _, c := range conditions {
+		if c.Type == "DriftDetected" && c.Status == metav1.ConditionTrue {
+			return models.SyncOutOfSync
+		}
+	}
+	return models.SyncUnknown
 }
 
 func messageFromConditions(conditions []metav1.Condition) string {

@@ -15,6 +15,7 @@ export type NodeType =
   | 'Provider';
 
 export type HealthStatus = 'Healthy' | 'Unhealthy' | 'Progressing' | 'Unknown';
+export type SyncStatus = 'Synced' | 'OutOfSync' | 'Unknown';
 
 export interface FluxNode {
   id: string;
@@ -23,6 +24,7 @@ export interface FluxNode {
   namespace: string;
   kind: string;
   status: HealthStatus;
+  syncStatus?: SyncStatus;
   message?: string;
   sourceRef?: string;
   revision?: string;

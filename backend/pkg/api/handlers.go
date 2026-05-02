@@ -17,6 +17,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/discovery"
+	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/yaml"
 
@@ -27,6 +28,7 @@ import (
 type Handler struct {
 	Watcher   *watcher.Watcher
 	Client    client.Client
+	Clientset kubernetes.Interface
 	Discovery discovery.DiscoveryInterface
 }
 
@@ -321,6 +323,56 @@ func (h *Handler) GetK8sEvents(c *gin.Context) {
 
 	c.JSON(http.StatusOK, result)
 }
+
+// GET /api/logs/:namespace/:name — SSE stream for pod logs.
+func (h *Handler) StreamLogs(c *gin.Context) {
+	ctx := c.Request.Context()
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	// Verify it's a pod.
+	var pod corev1.Pod
+	if err := h.Client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &pod); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "pod not found"})
+		return
+	}
+
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("X-Accel-Buffering", "no")
+
+	// Get pod log stream.
+	req := h.Clientset.CoreV1().Pods(namespace).GetLogs(name, &corev1.PodLogOptions{
+		Follow:    true,
+		TailLines: int64Ptr(100),
+	})
+	stream, err := req.Stream(ctx)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	defer stream.Close()
+
+	// Read stream and send as SSE.
+	go func() {
+		buf := make([]byte, 2048)
+		for {
+			n, err := stream.Read(buf)
+			if n > 0 {
+				c.SSEvent("log", string(buf[:n]))
+				c.Writer.Flush()
+			}
+			if err != nil {
+				return
+			}
+		}
+	}()
+
+	<-ctx.Done()
+}
+
+func int64Ptr(i int64) *int64 { return &i }
 
 // resolveGVR finds the GroupVersionResource for a given kind name using discovery.
 func resolveGVR(dc discovery.DiscoveryInterface, kind string) (schema.GroupVersionResource, error) {
