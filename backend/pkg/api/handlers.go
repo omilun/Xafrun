@@ -369,9 +369,6 @@ func (h *Handler) GetDiff(c *gin.Context) {
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 
-	var liveYAML string
-	var desiredYAML string
-
 	// 1. Fetch Live Object
 	gvr, err := resolveGVR(h.Discovery, kind)
 	if err != nil {
@@ -390,40 +387,34 @@ func (h *Handler) GetDiff(c *gin.Context) {
 		return
 	}
 
-	// Capture Live YAML (stripped)
-	liveObj := u.DeepCopy()
-	if meta, ok := liveObj.Object["metadata"].(map[string]interface{}); ok {
-		delete(meta, "managedFields")
-	}
-	liveBytes, _ := yaml.Marshal(liveObj.Object)
-	liveYAML = string(liveBytes)
+	liveObj := u.DeepCopy().Object
+	cleanForDiff(liveObj)
+	liveBytes, _ := yaml.Marshal(liveObj)
 
 	// 2. Resolve Desired State
-	// Logic: Flux (and kubectl) often stores the desired state in an annotation.
-	// This is the most efficient way to show drift without expensive dry-runs.
+	var desiredYAML string
 	annotations := u.GetAnnotations()
 	if lastApplied, ok := annotations["kubectl.kubernetes.io/last-applied-configuration"]; ok {
-		// It's a JSON string, let's convert it to YAML for a cleaner diff
-		var obj map[string]interface{}
-		if err := json.Unmarshal([]byte(lastApplied), &obj); err == nil {
-			desiredBytes, _ := yaml.Marshal(obj)
+		var desiredObj map[string]interface{}
+		if err := json.Unmarshal([]byte(lastApplied), &desiredObj); err == nil {
+			cleanForDiff(desiredObj)
+			desiredBytes, _ := yaml.Marshal(desiredObj)
 			desiredYAML = string(desiredBytes)
 		}
 	}
 
-	// If no annotation, we'll try to find if it's a Flux resource and use its Spec as a proxy for "Desired"
+	// Fallback for Flux resources if no last-applied annotation exists
 	if desiredYAML == "" {
 		if fluxObj, ok := kindToObject(kind); ok {
 			if err := h.Client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, fluxObj); err == nil {
-				// We only show the Spec as "Desired" to avoid metadata noise
 				m := stripManagedFields(fluxObj).(map[string]interface{})
 				if spec, ok := m["spec"]; ok {
 					desiredBytes, _ := yaml.Marshal(spec)
 					desiredYAML = string(desiredBytes)
-					// Also trim the live to just spec for a fair comparison
-					if liveSpec, ok := liveObj.Object["spec"]; ok {
+					// Trim live to spec for fallback comparison
+					if liveSpec, ok := liveObj["spec"]; ok {
 						lb, _ := yaml.Marshal(liveSpec)
-						liveYAML = string(lb)
+						liveBytes = lb
 					}
 				}
 			}
@@ -431,9 +422,35 @@ func (h *Handler) GetDiff(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"live":    liveYAML,
+		"live":    string(liveBytes),
 		"desired": desiredYAML,
 	})
+}
+
+// cleanForDiff removes noisy/dynamic fields from a Kubernetes object map to improve drift detection.
+func cleanForDiff(obj map[string]interface{}) {
+	if obj == nil {
+		return
+	}
+	// Configuration drift is about spec/meta, not status.
+	delete(obj, "status")
+
+	if meta, ok := obj["metadata"].(map[string]interface{}); ok {
+		// Remove dynamic fields that change on every cluster apply.
+		delete(meta, "resourceVersion")
+		delete(meta, "uid")
+		delete(meta, "generation")
+		delete(meta, "creationTimestamp")
+		delete(meta, "managedFields")
+
+		// Remove the last-applied annotation from the live side so it doesn't show up in diff.
+		if annos, ok := meta["annotations"].(map[string]interface{}); ok {
+			delete(annos, "kubectl.kubernetes.io/last-applied-configuration")
+			if len(annos) == 0 {
+				delete(meta, "annotations")
+			}
+		}
+	}
 }
 
 // resolveGVR finds the GroupVersionResource for a given kind name using discovery.
