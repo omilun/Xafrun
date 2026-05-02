@@ -273,22 +273,15 @@ func (h *Handler) GetYAML(c *gin.Context) {
 // GET /api/k8sevents/:kind/:namespace/:name — returns k8s events for a resource.
 func (h *Handler) GetK8sEvents(c *gin.Context) {
 	ctx := c.Request.Context()
-	kind := c.Param("kind")
 	namespace := c.Param("namespace")
 	name := c.Param("name")
 
-	var eventList corev1.EventList
-	if err := h.Client.List(ctx, &eventList,
-		client.InNamespace(namespace),
-		client.MatchingFields{
-			"involvedObject.name": name,
-		},
-	); err != nil {
-		// Fall back to listing all and filtering manually.
-		if err2 := h.Client.List(ctx, &eventList, client.InNamespace(namespace)); err2 != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err2.Error()})
-			return
-		}
+	eventList, err := h.Clientset.CoreV1().Events(namespace).List(ctx, metav1.ListOptions{
+		FieldSelector: "involvedObject.name=" + name,
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
 	}
 
 	type eventItem struct {
@@ -300,14 +293,7 @@ func (h *Handler) GetK8sEvents(c *gin.Context) {
 	}
 
 	result := make([]eventItem, 0)
-	kindLower := strings.ToLower(kind)
 	for _, ev := range eventList.Items {
-		if strings.ToLower(ev.InvolvedObject.Name) != strings.ToLower(name) {
-			continue
-		}
-		if kindLower != "" && strings.ToLower(ev.InvolvedObject.Kind) != kindLower {
-			continue
-		}
 		ts := ""
 		if !ev.LastTimestamp.IsZero() {
 			ts = ev.LastTimestamp.UTC().Format(metav1.RFC3339Micro)

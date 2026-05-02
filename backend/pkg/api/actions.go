@@ -78,15 +78,16 @@ func (h *Handler) Reconcile(c *gin.Context) {
 		return
 	}
 
-	patch, _ := json.Marshal(map[string]interface{}{
-		"metadata": map[string]interface{}{
-			"annotations": map[string]string{
-				"reconcile.fluxcd.io/requestedAt": time.Now().UTC().Format(time.RFC3339Nano),
-			},
-		},
-	})
+	patch := client.MergeFrom(obj.DeepCopyObject().(client.Object))
 
-	if err := h.Client.Patch(c.Request.Context(), obj, client.RawPatch(types.MergePatchType, patch)); err != nil {
+	annotations := obj.GetAnnotations()
+	if annotations == nil {
+		annotations = make(map[string]string)
+	}
+	annotations["reconcile.fluxcd.io/requestedAt"] = time.Now().Format(time.RFC3339Nano)
+	obj.SetAnnotations(annotations)
+
+	if err := h.Client.Patch(c.Request.Context(), obj, patch); err != nil {
 		writeError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -109,13 +110,33 @@ func patchSuspend(c *gin.Context, cl client.Client, suspend bool) {
 		return
 	}
 
-	patch, _ := json.Marshal(map[string]interface{}{
-		"spec": map[string]interface{}{
-			"suspend": suspend,
-		},
-	})
+	patch := client.MergeFrom(obj.DeepCopyObject().(client.Object))
 
-	if err := cl.Patch(c.Request.Context(), obj, client.RawPatch(types.MergePatchType, patch)); err != nil {
+	switch o := obj.(type) {
+	case *kustomizev1.Kustomization:
+		o.Spec.Suspend = suspend
+	case *helmv2.HelmRelease:
+		o.Spec.Suspend = suspend
+	case *sourcev1.GitRepository:
+		o.Spec.Suspend = suspend
+	case *sourcev1.OCIRepository:
+		o.Spec.Suspend = suspend
+	case *sourcev1.Bucket:
+		o.Spec.Suspend = suspend
+	case *sourcev1.HelmRepository:
+		o.Spec.Suspend = suspend
+	case *sourcev1.HelmChart:
+		o.Spec.Suspend = suspend
+	case *imagev1beta2.ImageRepository:
+		o.Spec.Suspend = suspend
+	case *automationv1beta2.ImageUpdateAutomation:
+		o.Spec.Suspend = suspend
+	default:
+		writeError(c, http.StatusBadRequest, "kind does not support suspension")
+		return
+	}
+
+	if err := cl.Patch(c.Request.Context(), obj, patch); err != nil {
 		writeError(c, http.StatusInternalServerError, err.Error())
 		return
 	}
