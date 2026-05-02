@@ -331,7 +331,6 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				Namespace: r.Namespace,
 				Kind:      "ImagePolicy",
 				Status:    healthFromConditions(r.Status.Conditions),
-				Suspended: r.Spec.Suspend,
 				Message:   messageFromConditions(r.Status.Conditions),
 			})
 		}
