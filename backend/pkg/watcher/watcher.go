@@ -155,7 +155,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 
 	sourceByRef := map[sourceKey]string{}
 
-	addSourceNode := func(uid, name, ns, kind string, conditions []metav1.Condition, revision string) {
+	addSourceNode := func(uid, name, ns, kind string, conditions []metav1.Condition, revision string, suspended bool) {
 		graph.Nodes = append(graph.Nodes, models.Node{
 			ID:        uid,
 			Type:      models.NodeSource,
@@ -164,6 +164,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			Kind:      kind,
 			Status:    healthFromConditions(conditions),
 			Sync:      syncFromConditions(conditions),
+			Suspended: suspended,
 			Message:   messageFromConditions(conditions),
 			Revision:  revision,
 		})
@@ -177,7 +178,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			if r.Status.Artifact != nil {
 				rev = r.Status.Artifact.Revision
 			}
-			addSourceNode(string(r.UID), r.Name, r.Namespace, "GitRepository", r.Status.Conditions, rev)
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "GitRepository", r.Status.Conditions, rev, r.Spec.Suspend)
 		}
 	}
 
@@ -189,7 +190,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			if r.Status.Artifact != nil {
 				rev = r.Status.Artifact.Revision
 			}
-			addSourceNode(string(r.UID), r.Name, r.Namespace, "OCIRepository", r.Status.Conditions, rev)
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "OCIRepository", r.Status.Conditions, rev, r.Spec.Suspend)
 		}
 	}
 
@@ -201,7 +202,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			if r.Status.Artifact != nil {
 				rev = r.Status.Artifact.Revision
 			}
-			addSourceNode(string(r.UID), r.Name, r.Namespace, "Bucket", r.Status.Conditions, rev)
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "Bucket", r.Status.Conditions, rev, r.Spec.Suspend)
 		}
 	}
 
@@ -213,7 +214,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			if r.Status.Artifact != nil {
 				rev = r.Status.Artifact.Revision
 			}
-			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmRepository", r.Status.Conditions, rev)
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmRepository", r.Status.Conditions, rev, r.Spec.Suspend)
 		}
 	}
 
@@ -225,7 +226,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			if r.Status.Artifact != nil {
 				rev = r.Status.Artifact.Revision
 			}
-			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmChart", r.Status.Conditions, rev)
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmChart", r.Status.Conditions, rev, r.Spec.Suspend)
 		}
 	}
 
@@ -242,6 +243,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				Kind:      "Kustomization",
 				Status:    healthFromConditions(ks.Status.Conditions),
 				Sync:      syncFromConditions(ks.Status.Conditions),
+				Suspended: ks.Spec.Suspend,
 				Message:   messageFromConditions(ks.Status.Conditions),
 				SourceRef: fmt.Sprintf("%s/%s", ks.Spec.SourceRef.Kind, ks.Spec.SourceRef.Name),
 			}
@@ -283,6 +285,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				Kind:      "HelmRelease",
 				Status:    healthFromConditions(hr.Status.Conditions),
 				Sync:      syncFromConditions(hr.Status.Conditions),
+				Suspended: hr.Spec.Suspend,
 				Message:   messageFromConditions(hr.Status.Conditions),
 				Revision:  hr.Status.LastAttemptedRevision,
 			}
@@ -311,6 +314,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				Namespace: r.Namespace,
 				Kind:      "ImageRepository",
 				Status:    healthFromConditions(r.Status.Conditions),
+				Suspended: r.Spec.Suspend,
 				Message:   messageFromConditions(r.Status.Conditions),
 			})
 		}
@@ -327,6 +331,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				Namespace: r.Namespace,
 				Kind:      "ImagePolicy",
 				Status:    healthFromConditions(r.Status.Conditions),
+				Suspended: r.Spec.Suspend,
 				Message:   messageFromConditions(r.Status.Conditions),
 			})
 		}
@@ -343,6 +348,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				Namespace: r.Namespace,
 				Kind:      "ImageUpdateAutomation",
 				Status:    healthFromConditions(r.Status.Conditions),
+				Suspended: r.Spec.Suspend,
 				Message:   messageFromConditions(r.Status.Conditions),
 				Revision:  r.Status.LastPushCommit,
 			})

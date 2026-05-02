@@ -35,6 +35,7 @@ type Node struct {
 	Kind      string       `json:"kind"`
 	Status    HealthStatus `json:"status"`
 	Sync      SyncStatus   `json:"syncStatus,omitempty"`
+	Suspended bool         `json:"suspended,omitempty"`
 	Message   string       `json:"message,omitempty"`
 	// Flux-specific details
 	SourceRef  string   `json:"sourceRef,omitempty"`  // e.g. "GitRepository/flux-system"

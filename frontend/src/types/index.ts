@@ -25,6 +25,7 @@ export interface FluxNode {
   kind: string;
   status: HealthStatus;
   syncStatus?: SyncStatus;
+  suspended?: boolean;
   message?: string;
   sourceRef?: string;
   revision?: string;

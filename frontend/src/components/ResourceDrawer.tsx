@@ -402,6 +402,13 @@ function DrawerContent({ meta, fluxNode, canSuspend, actionLoading, onAction, ta
               </div>
             )}
 
+            {fluxNode?.suspended && (
+              <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg text-xs text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                <PauseCircle className="w-4 h-4 shrink-0" />
+                <span>Reconciliation is currently suspended for this resource.</span>
+              </div>
+            )}
+
             <div className="space-y-2">
               {fluxNode?.sourceRef && <MetaRow label="Source Ref" value={fluxNode.sourceRef} />}
               {fluxNode?.revision && <MetaRow label="Revision" value={fluxNode.revision} />}
@@ -411,8 +418,9 @@ function DrawerContent({ meta, fluxNode, canSuspend, actionLoading, onAction, ta
               <div className="flex flex-col gap-2 pt-2">
                 <button
                   onClick={() => onAction('reconcile')}
-                  disabled={actionLoading !== null}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
+                  disabled={actionLoading !== null || fluxNode.suspended}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
+                  title={fluxNode.suspended ? 'Cannot reconcile a suspended resource' : 'Trigger immediate reconciliation'}
                 >
                   <RefreshCcw className={`w-4 h-4 ${actionLoading === 'reconcile' ? 'animate-spin' : ''}`} />
                   Reconcile
@@ -420,22 +428,25 @@ function DrawerContent({ meta, fluxNode, canSuspend, actionLoading, onAction, ta
 
                 {canSuspend && (
                   <>
-                    <button
-                      onClick={() => onAction('suspend')}
-                      disabled={actionLoading !== null}
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
-                    >
-                      <PauseCircle className={`w-4 h-4 ${actionLoading === 'suspend' ? 'animate-spin' : ''}`} />
-                      Suspend
-                    </button>
-                    <button
-                      onClick={() => onAction('resume')}
-                      disabled={actionLoading !== null}
-                      className="flex items-center justify-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors"
-                    >
-                      <PlayCircle className={`w-4 h-4 ${actionLoading === 'resume' ? 'animate-spin' : ''}`} />
-                      Resume
-                    </button>
+                    {!fluxNode.suspended ? (
+                      <button
+                        onClick={() => onAction('suspend')}
+                        disabled={actionLoading !== null}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
+                      >
+                        <PauseCircle className={`w-4 h-4 ${actionLoading === 'suspend' ? 'animate-spin' : ''}`} />
+                        Suspend
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onAction('resume')}
+                        disabled={actionLoading !== null}
+                        className="flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
+                      >
+                        <PlayCircle className={`w-4 h-4 ${actionLoading === 'resume' ? 'animate-spin' : ''}`} />
+                        Resume
+                      </button>
+                    )}
                   </>
                 )}
               </div>

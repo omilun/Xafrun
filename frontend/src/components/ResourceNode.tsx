@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { Handle, Position } from 'reactflow';
-import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { CheckCircle2, AlertCircle, PauseCircle } from 'lucide-react';
 import { FluxNode, HealthStatus, SyncStatus, InventoryItem } from '../types';
 
 // ─── Sync Status Badge ────────────────────────────────────────────────────────
@@ -20,6 +20,17 @@ function SyncStatusBadge({ status }: { status?: SyncStatus }) {
     <div className="flex items-center gap-1 text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100 uppercase tracking-tighter">
       <AlertCircle className="w-2.5 h-2.5" />
       Out Of Sync
+    </div>
+  );
+}
+
+// ─── Suspended Badge ─────────────────────────────────────────────────────────
+function SuspendedBadge({ suspended }: { suspended?: boolean }) {
+  if (!suspended) return null;
+  return (
+    <div className="flex items-center gap-1 text-[9px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 uppercase tracking-tighter ml-auto mr-1">
+      <PauseCircle className="w-2.5 h-2.5" />
+      Suspended
     </div>
   );
 }
@@ -127,7 +138,10 @@ const ResourceNode = ({ data }: { data: FluxNode }) => {
         <span className="text-[10px] font-semibold tracking-widest uppercase text-slate-400 pr-4">
           {data.kind}
         </span>
-        <SyncStatusBadge status={data.syncStatus} />
+        <div className="flex items-center gap-1">
+          <SuspendedBadge suspended={data.suspended} />
+          <SyncStatusBadge status={data.syncStatus} />
+        </div>
       </div>
 
       {/* Middle row: name */}
