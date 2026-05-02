@@ -11,6 +11,11 @@ export async function POST(
     method: 'POST',
     cache: 'no-store',
   });
+  
+  if (res.status === 204) {
+    return new NextResponse(null, { status: 204 });
+  }
+
   const body = await res.text();
   return new NextResponse(body, { status: res.status });
 }
