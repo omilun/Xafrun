@@ -280,6 +280,7 @@ func (h *Handler) GetK8sEvents(c *gin.Context) {
 		FieldSelector: "involvedObject.name=" + name,
 	})
 	if err != nil {
+		slog.Error("failed to list events", "err", err, "namespace", namespace, "name", name)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
