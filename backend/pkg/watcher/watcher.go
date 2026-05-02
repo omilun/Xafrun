@@ -87,7 +87,8 @@ func (w *Watcher) Start(ctx context.Context) error {
 	for _, obj := range watchTypes {
 		informer, err := w.ctrlCache.GetInformer(ctx, obj)
 		if err != nil {
-			return fmt.Errorf("getting informer for %T: %w", obj, err)
+			slog.Warn("skipping watcher for resource type", "type", fmt.Sprintf("%T", obj), "err", err.Error())
+			continue
 		}
 		if _, err := informer.AddEventHandler(handler); err != nil {
 			return fmt.Errorf("adding event handler for %T: %w", obj, err)
@@ -180,6 +181,8 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			}
 			addSourceNode(string(r.UID), r.Name, r.Namespace, "GitRepository", r.Status.Conditions, rev, r.Spec.Suspend)
 		}
+	} else {
+		slog.Debug("could not list GitRepositories", "err", err.Error())
 	}
 
 	// OCIRepositories
@@ -192,6 +195,8 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			}
 			addSourceNode(string(r.UID), r.Name, r.Namespace, "OCIRepository", r.Status.Conditions, rev, r.Spec.Suspend)
 		}
+	} else {
+		slog.Debug("could not list OCIRepositories", "err", err.Error())
 	}
 
 	// Buckets
@@ -204,6 +209,8 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			}
 			addSourceNode(string(r.UID), r.Name, r.Namespace, "Bucket", r.Status.Conditions, rev, r.Spec.Suspend)
 		}
+	} else {
+		slog.Debug("could not list Buckets", "err", err.Error())
 	}
 
 	// HelmRepositories
@@ -216,6 +223,8 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			}
 			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmRepository", r.Status.Conditions, rev, r.Spec.Suspend)
 		}
+	} else {
+		slog.Debug("could not list HelmRepositories", "err", err.Error())
 	}
 
 	// HelmCharts
@@ -228,6 +237,8 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			}
 			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmChart", r.Status.Conditions, rev, r.Spec.Suspend)
 		}
+	} else {
+		slog.Debug("could not list HelmCharts", "err", err.Error())
 	}
 
 	// Kustomizations
@@ -368,6 +379,8 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				Message:   messageFromConditions(r.Status.Conditions),
 			})
 		}
+	} else {
+		slog.Debug("could not list Receivers", "err", err.Error())
 	}
 
 	// Alerts
@@ -383,6 +396,8 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				Status:    models.HealthUnknown,
 			})
 		}
+	} else {
+		slog.Debug("could not list Alerts", "err", err.Error())
 	}
 
 	// Providers
@@ -398,6 +413,8 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				Status:    models.HealthUnknown,
 			})
 		}
+	} else {
+		slog.Debug("could not list Providers", "err", err.Error())
 	}
 
 	w.mu.Lock()
