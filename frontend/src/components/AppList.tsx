@@ -50,48 +50,47 @@ export function AppList({ nodes, onSelectApp }: AppListProps) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Stats bar */}
-      <div className="flex items-center gap-6 px-6 py-3 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 shrink-0">
-        <StatPill label="Total" value={stats.total} cls="text-slate-600 dark:text-gray-300" />
-        <StatPill label="Healthy" value={stats.healthy} cls="text-green-600 dark:text-green-400" />
-        {stats.unhealthy > 0 && (
+      {/* Top bar with stats + Search + Filter */}
+      <div className="flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 shrink-0 gap-6">
+        {/* Stats Section */}
+        <div className="flex items-center gap-6 shrink-0">
+          <StatPill label="Total" value={stats.total} cls="text-slate-600 dark:text-gray-300" />
+          <StatPill label="Healthy" value={stats.healthy} cls="text-green-600 dark:text-green-400" />
           <StatPill label="Unhealthy" value={stats.unhealthy} cls="text-red-600 dark:text-red-400" />
-        )}
-        {stats.progressing > 0 && (
           <StatPill label="Progressing" value={stats.progressing} cls="text-blue-600 dark:text-blue-400" />
-        )}
-      </div>
-
-      {/* Search + filter toolbar */}
-      <div className="flex items-center gap-3 px-6 py-3 bg-slate-50 dark:bg-gray-950 border-b border-slate-200 dark:border-gray-700 shrink-0">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Search applications…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-gray-700
-                       bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-300
-                       focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-400"
-          />
         </div>
 
-        <div className="flex items-center gap-1">
-          {FILTER_OPTIONS.map((opt) => (
-            <button
-              key={opt.value}
-              onClick={() => setHealthFilter(opt.value)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
-                healthFilter === opt.value
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-white dark:bg-gray-900 text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-800'
-              }`}
-            >
-              {opt.icon}
-              {opt.label}
-            </button>
-          ))}
+        {/* Toolbar Section */}
+        <div className="flex items-center gap-3 flex-1 justify-end max-w-2xl">
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search applications…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-gray-700
+                         bg-white dark:bg-gray-900 text-slate-700 dark:text-gray-300
+                         focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-400"
+            />
+          </div>
+
+          <div className="flex items-center gap-1">
+            {FILTER_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setHealthFilter(opt.value)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                  healthFilter === opt.value
+                    ? 'bg-indigo-600 text-white shadow-sm'
+                    : 'bg-white dark:bg-gray-900 text-slate-600 dark:text-gray-400 border border-slate-200 dark:border-gray-700 hover:bg-slate-50 dark:hover:bg-gray-800'
+                }`}
+              >
+                {opt.icon}
+                {opt.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
