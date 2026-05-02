@@ -252,7 +252,16 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			if r.Status.Artifact != nil {
 				rev = r.Status.Artifact.Revision
 			}
-			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmChart", r.Status.Conditions, rev, r.Spec.Suspend, &r.Spec.SourceRef)
+			
+			// Convert LocalHelmChartSourceReference to CrossNamespaceSourceReference
+			srcRef := &sourcev1.CrossNamespaceSourceReference{
+				APIVersion: r.Spec.SourceRef.APIVersion,
+				Kind:       r.Spec.SourceRef.Kind,
+				Name:       r.Spec.SourceRef.Name,
+				Namespace:  r.Namespace,
+			}
+			
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmChart", r.Status.Conditions, rev, r.Spec.Suspend, srcRef)
 		}
 	} else {
 		slog.Debug("could not list HelmCharts", "err", err.Error())

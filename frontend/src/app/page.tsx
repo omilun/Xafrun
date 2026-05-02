@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { Activity, RefreshCcw, Search, SlidersHorizontal, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { Activity, RefreshCcw, Search } from 'lucide-react';
 import type { ReactFlowInstance } from 'reactflow';
 import { AppList } from '@/components/AppList';
 import { AppDetail } from '@/components/AppDetail';
