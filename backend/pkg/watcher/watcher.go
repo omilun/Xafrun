@@ -156,7 +156,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 
 	sourceByRef := map[sourceKey]string{}
 
-	addSourceNode := func(uid, name, ns, kind string, conditions []metav1.Condition, revision string, suspended bool) {
+	addSourceNode := func(uid, name, ns, kind string, conditions []metav1.Condition, revision string, suspended bool, srcRef *sourcev1.CrossNamespaceSourceReference) {
 		graph.Nodes = append(graph.Nodes, models.Node{
 			ID:        uid,
 			Type:      models.NodeSource,
@@ -170,7 +170,24 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			Revision:  revision,
 		})
 		sourceByRef[sourceKey{kind: kind, namespace: ns, name: name}] = uid
+
+		// If this source has a parent source (e.g. HelmChart -> HelmRepository)
+		if srcRef != nil {
+			srcNS := srcRef.Namespace
+			if srcNS == "" {
+				srcNS = ns
+			}
+			parentKey := sourceKey{kind: srcRef.Kind, namespace: srcNS, name: srcRef.Name}
+			if parentUID, ok := sourceByRef[parentKey]; ok {
+				graph.Edges = append(graph.Edges, models.Edge{
+					ID:     fmt.Sprintf("e-%s-%s", parentUID, uid),
+					Source: parentUID,
+					Target: uid,
+				})
+			}
 		}
+	}
+
 	// GitRepositories
 	var gitRepos sourcev1.GitRepositoryList
 	if err := w.ctrlClient.List(ctx, &gitRepos); err == nil {
@@ -179,7 +196,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			if r.Status.Artifact != nil {
 				rev = r.Status.Artifact.Revision
 			}
-			addSourceNode(string(r.UID), r.Name, r.Namespace, "GitRepository", r.Status.Conditions, rev, r.Spec.Suspend)
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "GitRepository", r.Status.Conditions, rev, r.Spec.Suspend, nil)
 		}
 	} else {
 		slog.Debug("could not list GitRepositories", "err", err.Error())
@@ -193,7 +210,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			if r.Status.Artifact != nil {
 				rev = r.Status.Artifact.Revision
 			}
-			addSourceNode(string(r.UID), r.Name, r.Namespace, "OCIRepository", r.Status.Conditions, rev, r.Spec.Suspend)
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "OCIRepository", r.Status.Conditions, rev, r.Spec.Suspend, nil)
 		}
 	} else {
 		slog.Debug("could not list OCIRepositories", "err", err.Error())
@@ -207,7 +224,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			if r.Status.Artifact != nil {
 				rev = r.Status.Artifact.Revision
 			}
-			addSourceNode(string(r.UID), r.Name, r.Namespace, "Bucket", r.Status.Conditions, rev, r.Spec.Suspend)
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "Bucket", r.Status.Conditions, rev, r.Spec.Suspend, nil)
 		}
 	} else {
 		slog.Debug("could not list Buckets", "err", err.Error())
@@ -221,7 +238,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			if r.Status.Artifact != nil {
 				rev = r.Status.Artifact.Revision
 			}
-			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmRepository", r.Status.Conditions, rev, r.Spec.Suspend)
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmRepository", r.Status.Conditions, rev, r.Spec.Suspend, nil)
 		}
 	} else {
 		slog.Debug("could not list HelmRepositories", "err", err.Error())
@@ -235,7 +252,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			if r.Status.Artifact != nil {
 				rev = r.Status.Artifact.Revision
 			}
-			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmChart", r.Status.Conditions, rev, r.Spec.Suspend)
+			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmChart", r.Status.Conditions, rev, r.Spec.Suspend, &r.Spec.SourceRef)
 		}
 	} else {
 		slog.Debug("could not list HelmCharts", "err", err.Error())
@@ -304,6 +321,53 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				node.SourceRef = fmt.Sprintf("%s/%s", hr.Spec.Chart.Spec.SourceRef.Kind, hr.Spec.Chart.Spec.SourceRef.Name)
 				node.ChartName = hr.Spec.Chart.Spec.Chart
 			}
+			
+			// Link to HelmChart or direct source
+			var srcKind, srcName, srcNS string
+			if hr.Spec.Chart != nil {
+				srcKind = hr.Spec.Chart.Spec.SourceRef.Kind
+				srcName = hr.Spec.Chart.Spec.SourceRef.Name
+				srcNS   = hr.Spec.Chart.Spec.SourceRef.Namespace
+			} else if hr.Spec.ChartRef != nil {
+				srcKind = hr.Spec.ChartRef.Kind
+				srcName = hr.Spec.ChartRef.Name
+				srcNS   = hr.Spec.ChartRef.Namespace
+			}
+			
+			if srcNS == "" {
+				srcNS = hr.Namespace
+			}
+
+			if hr.Spec.Chart != nil {
+				chartName := fmt.Sprintf("%s-%s", hr.Namespace, hr.Name)
+				chartKey := sourceKey{kind: "HelmChart", namespace: hr.Namespace, name: chartName}
+				if chartUID, ok := sourceByRef[chartKey]; ok {
+					graph.Edges = append(graph.Edges, models.Edge{
+						ID:     fmt.Sprintf("e-%s-%s", chartUID, hrID),
+						Source: chartUID,
+						Target: hrID,
+					})
+				} else {
+					key := sourceKey{kind: srcKind, namespace: srcNS, name: srcName}
+					if srcUID, ok := sourceByRef[key]; ok {
+						graph.Edges = append(graph.Edges, models.Edge{
+							ID:     fmt.Sprintf("e-%s-%s", srcUID, hrID),
+							Source: srcUID,
+							Target: hrID,
+						})
+					}
+				}
+			} else {
+				key := sourceKey{kind: srcKind, namespace: srcNS, name: srcName}
+				if srcUID, ok := sourceByRef[key]; ok {
+					graph.Edges = append(graph.Edges, models.Edge{
+						ID:     fmt.Sprintf("e-%s-%s", srcUID, hrID),
+						Source: srcUID,
+						Target: hrID,
+					})
+				}
+			}
+
 			// Populate inventory from HelmRelease status (same structure as Kustomization).
 			if hr.Status.Inventory != nil {
 				for _, entry := range hr.Status.Inventory.Entries {

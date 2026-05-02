@@ -35,7 +35,7 @@ function buildInventoryNodes(appNode: FluxNode): { nodes: Node[]; edges: Edge[] 
 
   const g = new Dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: 'TB', ranksep: 80, nodesep: 30, marginx: 40, marginy: 40 });
+  g.setGraph({ rankdir: 'LR', ranksep: 80, nodesep: 30, marginx: 40, marginy: 40 });
 
   inventoryItems.forEach((item, i) => {
     g.setNode(`inv-${i}`, { width: K8S_NODE_WIDTH, height: K8S_NODE_HEIGHT });
@@ -50,8 +50,8 @@ function buildInventoryNodes(appNode: FluxNode): { nodes: Node[]; edges: Edge[] 
       type: 'k8sNode',
       data: item,
       position: { x: x - K8S_NODE_WIDTH / 2, y: y - K8S_NODE_HEIGHT / 2 },
-      sourcePosition: Position.Bottom,
-      targetPosition: Position.Top,
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
     };
   });
 
@@ -72,9 +72,9 @@ function layoutWithDagre(data: FluxGraph, appNode?: FluxNode): { nodes: Node[]; 
   const g = new Dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
   g.setGraph({
-    rankdir: 'TB',
-    ranksep: 400,
-    nodesep: 250,
+    rankdir: 'LR',
+    ranksep: 200,
+    nodesep: 100,
     marginx: 100,
     marginy: 100,
   });
@@ -95,8 +95,8 @@ function layoutWithDagre(data: FluxGraph, appNode?: FluxNode): { nodes: Node[]; 
       type: 'fluxNode',
       data: n,
       position: { x: x - FLUX_NODE_WIDTH / 2, y: y - FLUX_NODE_HEIGHT / 2 },
-      sourcePosition: Position.Bottom,
-      targetPosition: Position.Top,
+      sourcePosition: Position.Right,
+      targetPosition: Position.Left,
     };
   });
 
@@ -107,7 +107,7 @@ function layoutWithDagre(data: FluxGraph, appNode?: FluxNode): { nodes: Node[]; 
     markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
   }));
 
-  // If in detail mode, append inventory nodes below the app node
+  // If in detail mode, append inventory nodes to the right of the app node
   if (appNode && appNode.inventory && appNode.inventory.length > 0) {
     const appRfNode = fluxNodes.find((n) => n.id === appNode.id);
     const appY = appRfNode ? appRfNode.position.y : 0;
@@ -115,17 +115,18 @@ function layoutWithDagre(data: FluxGraph, appNode?: FluxNode): { nodes: Node[]; 
 
     const { nodes: invNodes, edges: invEdges } = buildInventoryNodes(appNode);
 
-    // Offset inventory nodes below the app node
-    const invOffsetY = appY + FLUX_NODE_HEIGHT + 120;
-    // Centre them around the app node
-    const totalInvWidth = invNodes.reduce((sum) => sum + K8S_NODE_WIDTH + 20, 0);
-    const invStartX = appX + FLUX_NODE_WIDTH / 2 - totalInvWidth / 2;
+    // Offset inventory nodes to the right of the app node
+    const invOffsetX = appX + FLUX_NODE_WIDTH + 150;
+    
+    // Centre them vertically around the app node
+    const totalInvHeight = invNodes.reduce((sum) => sum + K8S_NODE_HEIGHT + 20, 0);
+    const invStartY = appY + FLUX_NODE_HEIGHT / 2 - totalInvHeight / 2;
 
     const offsetInvNodes = invNodes.map((n, idx) => ({
       ...n,
       position: {
-        x: invStartX + idx * (K8S_NODE_WIDTH + 20),
-        y: invOffsetY,
+        x: invOffsetX,
+        y: invStartY + idx * (K8S_NODE_HEIGHT + 20),
       },
     }));
 
@@ -151,13 +152,16 @@ const FluxTree = ({ data, onNodeClick, rfInstanceRef, focusedApp }: FluxTreeProp
   );
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
 
+  // Use node length as a dependency to only fitView when structure changes,
+  // preventing constant snapping back to fitView during simple status updates.
+  const nodesLength = nodes.length;
   useEffect(() => {
     if (!rfInstance) return;
     const id = setTimeout(() => {
       rfInstance.fitView({ padding: 0.2, duration: 400 });
     }, 60);
     return () => clearTimeout(id);
-  }, [nodes, rfInstance]);
+  }, [rfInstance, nodesLength]);
 
   const handleInit = (instance: ReactFlowInstance) => {
     setRfInstance(instance);
