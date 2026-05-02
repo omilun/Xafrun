@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { Activity, RefreshCcw, Search } from 'lucide-react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { Activity, RefreshCcw, Search, SlidersHorizontal, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import type { ReactFlowInstance } from 'reactflow';
 import { AppList } from '@/components/AppList';
 import { AppDetail } from '@/components/AppDetail';
@@ -9,9 +9,10 @@ import { NewsTicker } from '@/components/NewsTicker';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { CommandPalette } from '@/components/CommandPalette';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { FluxGraph, FluxNode, ClusterInfo } from '@/types';
+import { FluxGraph, FluxNode, ClusterInfo, APP_KINDS, isOrchestratorKustomization } from '@/types';
 
 type ConnStatus = 'connecting' | 'live' | 'error';
+type HealthFilter = 'all' | 'Healthy' | 'Unhealthy' | 'Progressing';
 
 export default function Home() {
   const [graph, setGraph]         = useState<FluxGraph | null>(null);
@@ -20,7 +21,37 @@ export default function Home() {
   const [info, setInfo]           = useState<ClusterInfo | null>(null);
   const [selectedApp, setSelectedApp] = useState<FluxNode | null>(null);
   const [paletteOpen, setPaletteOpen] = useState(false);
+
+  // Search & Filter state
+  const [search, setSearch] = useState('');
+  const [healthFilter, setHealthFilter] = useState<HealthFilter>('all');
+
   const rfInstanceRef = useRef<ReactFlowInstance | null>(null);
+
+  // Stats calculation
+  const apps = useMemo(() => {
+    if (!graph) return [];
+    return graph.nodes.filter((n) => APP_KINDS.has(n.kind) && !isOrchestratorKustomization(n));
+  }, [graph]);
+
+  const stats = useMemo(() => ({
+    total:       apps.length,
+    healthy:     apps.filter((n) => n.status === 'Healthy').length,
+    unhealthy:   apps.filter((n) => n.status === 'Unhealthy').length,
+    progressing: apps.filter((n) => n.status === 'Progressing').length,
+  }), [apps]);
+
+  const filteredApps = useMemo(() => {
+    return apps.filter((n) => {
+      const matchesSearch =
+        !search ||
+        n.name.toLowerCase().includes(search.toLowerCase()) ||
+        n.namespace.toLowerCase().includes(search.toLowerCase());
+      const matchesHealth =
+        healthFilter === 'all' || n.status === healthFilter;
+      return matchesSearch && matchesHealth;
+    });
+  }, [apps, search, healthFilter]);
 
   useEffect(() => {
     fetch('/api/info')
@@ -82,49 +113,71 @@ export default function Home() {
   return (
     <main className="flex flex-col h-screen w-screen overflow-hidden bg-slate-50 dark:bg-gray-950">
       {/* ── Global header ───────────────────────────────────────────── */}
-      <header className="h-14 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700
-                         px-6 flex items-center justify-between shrink-0 shadow-sm z-10">
-        <button
-          onClick={() => setSelectedApp(null)}
-          className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-        >
-          <div className="bg-indigo-600 p-1.5 rounded-lg">
-            <Activity className="w-4 h-4 text-white" />
-          </div>
-          <div className="text-left">
-            <span className="text-base font-bold text-slate-900 dark:text-gray-100 tracking-tight">Xafrun</span>
-            <p className="text-[9px] text-slate-400 dark:text-gray-500 font-medium uppercase tracking-widest leading-none">
-              GitOps Dashboard
-            </p>
-          </div>
-        </button>
-
-        <div className="flex items-center gap-3">
+      <header className="h-16 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700
+                         px-6 flex items-center justify-between shrink-0 shadow-sm z-10 gap-8">
+        <div className="flex items-center gap-8 shrink-0">
           <button
-            onClick={() => setPaletteOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-gray-400
-                       hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-gray-800 dark:hover:text-indigo-300
-                       rounded-md border border-slate-200 dark:border-gray-700 transition-colors"
-            title="Search resources (⌘K)"
+            onClick={() => { setSelectedApp(null); setSearch(''); setHealthFilter('all'); }}
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
           >
-            <Search className="w-3.5 h-3.5" />
-            Search
-            <kbd className="text-[10px] font-medium text-slate-400 dark:text-gray-600 bg-slate-100 dark:bg-gray-800 px-1.5 py-0.5 rounded">⌘K</kbd>
+            <div className="bg-indigo-600 p-1.5 rounded-lg">
+              <Activity className="w-4 h-4 text-white" />
+            </div>
+            <div className="text-left">
+              <span className="text-base font-bold text-slate-900 dark:text-gray-100 tracking-tight leading-tight">Xafrun</span>
+              <p className="text-[9px] text-slate-400 dark:text-gray-500 font-medium uppercase tracking-widest leading-none">
+                GitOps Dashboard
+              </p>
+            </div>
           </button>
 
-          {error && (
-            <button
-              onClick={connect}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-slate-600 dark:text-gray-300 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-gray-800 rounded-md transition-colors"
-            >
-              <RefreshCcw className="w-4 h-4" />
-              Reconnect
-            </button>
+          {!selectedApp && graph && (
+            <div className="flex items-center gap-6 border-l border-slate-100 dark:border-gray-800 pl-8">
+              <StatPill label="Total" value={stats.total} cls="text-slate-600 dark:text-gray-300" />
+              <StatPill label="Healthy" value={stats.healthy} cls="text-green-600 dark:text-green-400" />
+              <StatPill label="Unhealthy" value={stats.unhealthy} cls="text-red-600 dark:text-red-400" />
+              <StatPill label="Progressing" value={stats.progressing} cls="text-blue-600 dark:text-blue-400" />
+            </div>
           )}
+        </div>
 
+        {/* Toolbar Section in Header */}
+        {!selectedApp && graph && (
+          <div className="flex items-center gap-3 flex-1 justify-center max-w-2xl">
+            <div className="relative w-full max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Search applications…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-200 dark:border-gray-700
+                           bg-slate-50 dark:bg-gray-800 text-slate-700 dark:text-gray-300
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-400 transition-all"
+              />
+            </div>
+            <div className="flex items-center gap-1 shrink-0">
+              {(['all', 'Healthy', 'Unhealthy', 'Progressing'] as HealthFilter[]).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setHealthFilter(f)}
+                  className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-tight transition-all ${
+                    healthFilter === f
+                      ? 'bg-indigo-600 text-white shadow-sm'
+                      : 'text-slate-500 dark:text-gray-400 hover:bg-slate-100 dark:hover:bg-gray-800'
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 shrink-0">
           <ThemeToggle />
 
-          <div className="h-6 w-[1px] bg-slate-200 dark:bg-gray-700" />
+          <div className="h-6 w-[1px] bg-slate-200 dark:bg-gray-700 mx-1" />
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${
               status === 'live'  ? 'bg-green-500 animate-pulse' :
@@ -174,7 +227,10 @@ export default function Home() {
                 onBack={() => setSelectedApp(null)}
               />
             ) : (
-              <AppList nodes={graph.nodes} onSelectApp={setSelectedApp} />
+              <AppList 
+                nodes={filteredApps} 
+                onSelectApp={setSelectedApp}
+              />
             )}
           </ErrorBoundary>
         ) : null}
