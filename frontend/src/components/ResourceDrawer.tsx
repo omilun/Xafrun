@@ -197,7 +197,6 @@ function DiffTabInner({ kind, namespace, name }: { kind: string; namespace: stri
               codeFoldGutterBackground: '#0f172a',
               codeFoldBackground: '#1e293b',
               emptyLineBackground: '#020617',
-              lineNumberColor: '#475569',
               diffViewerTitleBackground: '#0f172a',
               diffViewerTitleColor: '#94a3b8',
               diffViewerTitleBorderColor: '#1e293b',
