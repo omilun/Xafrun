@@ -5,8 +5,9 @@ import {
   X, RefreshCcw, PauseCircle, PlayCircle,
   AlertTriangle, CheckCircle2, Loader2, Clock,
 } from 'lucide-react';
+import ReactDiffViewer from 'react-diff-viewer-continued';
 import { FluxNode, HealthStatus, InventoryItem, K8sEvent } from '@/types';
-import { reconcile, suspend, resume, fetchYaml, fetchK8sEvents } from '@/lib/api';
+import { reconcile, suspend, resume, fetchYaml, fetchK8sEvents, fetchDiff } from '@/lib/api';
 import { useToast } from './Toast';
 
 // DrawerNode accepts either a FluxNode OR a parsed InventoryItem
@@ -24,7 +25,7 @@ const SUSPENDABLE_KINDS = new Set([
   'HelmRepository', 'HelmChart', 'ImageRepository', 'ImageUpdateAutomation',
 ]);
 
-type TabId = 'overview' | 'yaml' | 'events';
+type TabId = 'overview' | 'yaml' | 'diff' | 'events';
 
 function HealthBadge({ status }: { status: HealthStatus }) {
   const map: Record<HealthStatus, string> = {
@@ -140,6 +141,78 @@ function EventsTab(props: { kind: string; namespace: string; name: string }) {
   return <EventsTabInner key={`${props.kind}/${props.namespace}/${props.name}`} {...props} />;
 }
 
+// ─── Diff Tab ────────────────────────────────────────────────────────────────
+function DiffTabInner({ kind, namespace, name }: { kind: string; namespace: string; name: string }) {
+  const [diff, setDiff] = useState<{ live: string; desired: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchDiff(kind, namespace, name)
+      .then(setDiff)
+      .catch((e: Error) => setError(e.message));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (diff === null && error === null) return (
+    <div className="flex items-center justify-center h-32">
+      <Loader2 className="w-5 h-5 text-indigo-500 animate-spin" />
+    </div>
+  );
+  if (error) return (
+    <div className="flex items-center gap-2 p-3 bg-red-50 dark:bg-red-900/20 rounded-lg text-xs text-red-700 dark:text-red-400">
+      <AlertTriangle className="w-4 h-4 shrink-0" />
+      {error}
+    </div>
+  );
+  if (!diff?.desired) return (
+    <div className="flex flex-col items-center gap-2 py-8 text-slate-400 dark:text-gray-500">
+      <AlertTriangle className="w-8 h-8" />
+      <span className="text-sm text-center">Desired state (last-applied) not found.<br/>Cannot calculate drift.</span>
+    </div>
+  );
+
+  return (
+    <div className="rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 text-[10px]">
+      <ReactDiffViewer
+        oldValue={diff.desired}
+        newValue={diff.live}
+        splitView={true}
+        leftTitle="Desired (Git)"
+        rightTitle="Live (Cluster)"
+        useDarkTheme={true}
+        styles={{
+          variables: {
+            dark: {
+              diffViewerBackground: '#020617',
+              diffViewerColor: '#cbd5e1',
+              addedBackground: '#064e3b',
+              addedColor: '#6ee7b7',
+              removedBackground: '#7f1d1d',
+              removedColor: '#fca5a5',
+              wordAddedBackground: '#065f46',
+              wordRemovedBackground: '#991b1b',
+              addedGutterBackground: '#064e3b',
+              removedGutterBackground: '#7f1d1d',
+              gutterColor: '#475569',
+              codeFoldGutterBackground: '#0f172a',
+              codeFoldBackground: '#1e293b',
+              emptyLineBackground: '#020617',
+              lineNumberColor: '#475569',
+              diffViewerTitleBackground: '#0f172a',
+              diffViewerTitleColor: '#94a3b8',
+              diffViewerTitleBorderColor: '#1e293b',
+            }
+          }
+        }}
+      />
+    </div>
+  );
+}
+
+function DiffTab(props: { kind: string; namespace: string; name: string }) {
+  return <DiffTabInner key={`${props.kind}/${props.namespace}/${props.name}`} {...props} />;
+}
+
 // ─── Logs Tab ─────────────────────────────────────────────────────────────────
 function LogsTabInner({ namespace, name }: { namespace: string; name: string }) {
   const [logs, setLogs] = useState<string[]>([]);
@@ -225,6 +298,7 @@ export function ResourceDrawer({ node, onClose }: ResourceDrawerProps) {
   const tabs: { id: TabId | 'logs'; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'yaml', label: 'YAML' },
+    { id: 'diff', label: 'Diff' },
     { id: 'events', label: 'Events' },
   ];
   if (meta?.kind === 'Pod') {
@@ -372,6 +446,10 @@ function DrawerContent({ meta, fluxNode, canSuspend, actionLoading, onAction, ta
 
         {activeTab === 'yaml' && (
           <YamlTab kind={meta.kind} namespace={meta.namespace} name={meta.name} />
+        )}
+
+        {activeTab === 'diff' && (
+          <DiffTab kind={meta.kind} namespace={meta.namespace} name={meta.name} />
         )}
 
         {activeTab === 'events' && (

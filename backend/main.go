@@ -113,6 +113,7 @@ func main() {
 		authenticated.GET("/api/info", handler.GetInfo)
 		authenticated.GET("/api/openapi.json", handler.GetOpenAPI)
 		authenticated.GET("/api/yaml/:kind/:namespace/:name", handler.GetYAML)
+		authenticated.GET("/api/diff/:kind/:namespace/:name", handler.GetDiff)
 		authenticated.GET("/api/k8sevents/:kind/:namespace/:name", handler.GetK8sEvents)
 		authenticated.GET("/api/logs/:namespace/:name", handler.StreamLogs)
 		authenticated.POST("/api/reconcile/:kind/:namespace/:name", handler.Reconcile)

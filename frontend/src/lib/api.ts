@@ -33,3 +33,9 @@ export async function fetchK8sEvents(kind: string, namespace: string, name: stri
   if (!res.ok) throw new Error(`Failed to fetch events: ${res.statusText}`);
   return res.json();
 }
+
+export async function fetchDiff(kind: string, namespace: string, name: string): Promise<{ live: string; desired: string }> {
+  const res = await fetch(`${BASE}/api/diff/${kind.toLowerCase()}/${namespace}/${name}`);
+  if (!res.ok) throw new Error(`Failed to fetch diff: ${res.statusText}`);
+  return res.json();
+}

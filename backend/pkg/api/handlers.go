@@ -362,6 +362,80 @@ func (h *Handler) StreamLogs(c *gin.Context) {
 
 func int64Ptr(i int64) *int64 { return &i }
 
+// GET /api/diff/:kind/:namespace/:name — returns live and desired (last-applied) YAML for drift detection.
+func (h *Handler) GetDiff(c *gin.Context) {
+	ctx := c.Request.Context()
+	kind := c.Param("kind")
+	namespace := c.Param("namespace")
+	name := c.Param("name")
+
+	var liveYAML string
+	var desiredYAML string
+
+	// 1. Fetch Live Object
+	gvr, err := resolveGVR(h.Discovery, kind)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "unknown kind: " + kind})
+		return
+	}
+
+	var u unstructured.Unstructured
+	u.SetGroupVersionKind(schema.GroupVersionKind{
+		Group:   gvr.Group,
+		Version: gvr.Version,
+		Kind:    strings.ToUpper(kind[:1]) + strings.ToLower(kind[1:]),
+	})
+	if err := h.Client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, &u); err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Capture Live YAML (stripped)
+	liveObj := u.DeepCopy()
+	if meta, ok := liveObj.Object["metadata"].(map[string]interface{}); ok {
+		delete(meta, "managedFields")
+	}
+	liveBytes, _ := yaml.Marshal(liveObj.Object)
+	liveYAML = string(liveBytes)
+
+	// 2. Resolve Desired State
+	// Logic: Flux (and kubectl) often stores the desired state in an annotation.
+	// This is the most efficient way to show drift without expensive dry-runs.
+	annotations := u.GetAnnotations()
+	if lastApplied, ok := annotations["kubectl.kubernetes.io/last-applied-configuration"]; ok {
+		// It's a JSON string, let's convert it to YAML for a cleaner diff
+		var obj map[string]interface{}
+		if err := json.Unmarshal([]byte(lastApplied), &obj); err == nil {
+			desiredBytes, _ := yaml.Marshal(obj)
+			desiredYAML = string(desiredBytes)
+		}
+	}
+
+	// If no annotation, we'll try to find if it's a Flux resource and use its Spec as a proxy for "Desired"
+	if desiredYAML == "" {
+		if fluxObj, ok := kindToObject(kind); ok {
+			if err := h.Client.Get(ctx, types.NamespacedName{Namespace: namespace, Name: name}, fluxObj); err == nil {
+				// We only show the Spec as "Desired" to avoid metadata noise
+				m := stripManagedFields(fluxObj).(map[string]interface{})
+				if spec, ok := m["spec"]; ok {
+					desiredBytes, _ := yaml.Marshal(spec)
+					desiredYAML = string(desiredBytes)
+					// Also trim the live to just spec for a fair comparison
+					if liveSpec, ok := liveObj.Object["spec"]; ok {
+						lb, _ := yaml.Marshal(liveSpec)
+						liveYAML = string(lb)
+					}
+				}
+			}
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"live":    liveYAML,
+		"desired": desiredYAML,
+	})
+}
+
 // resolveGVR finds the GroupVersionResource for a given kind name using discovery.
 func resolveGVR(dc discovery.DiscoveryInterface, kind string) (schema.GroupVersionResource, error) {
 	lists, err := dc.ServerPreferredResources()
