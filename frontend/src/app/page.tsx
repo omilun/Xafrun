@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
-import { Activity, RefreshCcw, Search, X } from 'lucide-react';
+import Image from 'next/image';
+import { RefreshCcw, Search } from 'lucide-react';
 import type { ReactFlowInstance } from 'reactflow';
 import { AppList } from '@/components/AppList';
 import { AppDetail } from '@/components/AppDetail';
@@ -97,21 +98,26 @@ export default function Home() {
       {/* ── Global header ───────────────────────────────────────────── */}
       <header className="h-14 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700
                          px-6 flex items-center justify-between shrink-0 shadow-sm z-10">
-        {/* Logo */}
-        <button
-          onClick={() => { setSelectedApp(null); clearFilters(); }}
-          className="flex items-center gap-2.5 hover:opacity-80 transition-opacity shrink-0"
-        >
-          <div className="bg-indigo-600 p-1.5 rounded-lg">
-            <Activity className="w-4 h-4 text-white" />
-          </div>
-          <div className="text-left leading-none">
-            <span className="text-sm font-bold text-slate-900 dark:text-gray-100 tracking-tight">Xafrun</span>
-            <p className="text-[9px] text-slate-400 dark:text-gray-500 font-medium uppercase tracking-widest mt-0.5">
-              GitOps Dashboard
-            </p>
-          </div>
-        </button>
+        <div className="flex items-center gap-8 shrink-0">
+          <button
+            onClick={() => { setSelectedApp(null); clearFilters(); }}
+            className="flex items-center gap-3.5 hover:opacity-80 transition-opacity shrink-0"
+          >
+            <div className="relative w-9 h-9 overflow-hidden rounded-lg shadow-sm border border-slate-100 dark:border-gray-800 bg-white">
+              <Image 
+                src="/logo.png" 
+                alt="Xafrun Logo" 
+                fill
+                className="object-contain p-0.5"
+              />
+            </div>
+            <div className="text-left leading-none">
+              <span className="text-base font-extrabold text-slate-900 dark:text-gray-100 tracking-tight">Xafrun</span>
+              <p className="text-[9px] text-slate-400 dark:text-gray-500 font-bold uppercase tracking-widest mt-1">
+                GitOps Visualization
+              </p>
+            </div>
+          </button>
 
         {/* Right: cluster info + connection status */}
         <div className="flex items-center gap-3 shrink-0">
@@ -135,9 +141,16 @@ export default function Home() {
         </div>
       </header>
 
-      {/* ── Toolbar: search + filter chips (merged stats + filters) ─── */}
       {!selectedApp && graph && (
-        <div className="shrink-0 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 px-6 py-2.5 flex items-center gap-4 shadow-xs z-10">
+        <div className="shrink-0 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 px-6 py-2.5 flex items-center gap-6 shadow-xs z-10">
+          {/* Stats Section */}
+          <div className="flex items-center gap-6 shrink-0 border-r border-slate-100 dark:border-gray-800 pr-6">
+            <StatPill label="Total" value={counts.all} cls="text-slate-600 dark:text-gray-300" />
+            <StatPill label="Healthy" value={counts.Healthy} cls="text-green-600 dark:text-green-400" />
+            <StatPill label="Unhealthy" value={counts.Unhealthy} cls="text-red-600 dark:text-red-400" />
+            <StatPill label="Progressing" value={counts.Progressing} cls="text-blue-600 dark:text-blue-400" />
+          </div>
+
           {/* Search */}
           <div className="relative w-64 shrink-0">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
