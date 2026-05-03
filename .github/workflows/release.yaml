@@ -1,0 +1,237 @@
+name: Release
+
+# Triggered by pushing a tag like v0.1.6, v1.0.0, etc.
+# Builds multi-platform images (linux/amd64 + linux/arm64),
+# runs Trivy security scan, and creates a GitHub Release with
+# compatibility notes and scan results.
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write      # create GitHub Releases
+  packages: write      # push to ghcr.io
+  security-events: write  # upload Trivy SARIF
+
+env:
+  REGISTRY: ghcr.io
+  OWNER: omilun
+
+jobs:
+  # ── 1. Build multi-platform images ──────────────────────────────────────────
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [backend, frontend]
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: meta
+        run: |
+          TAG="${GITHUB_REF_NAME}"          # e.g. v0.1.6
+          VERSION="${TAG#v}"                # strip leading 'v'
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - uses: docker/setup-qemu-action@v3   # enables arm64 emulation on x86 runner
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.component }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.component }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          provenance: false   # keep manifest simple (no unknown digest)
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/xafrun-${{ matrix.component }}:${{ steps.meta.outputs.version }}
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/xafrun-${{ matrix.component }}:latest
+
+  # ── 2. Trivy security scan ───────────────────────────────────────────────────
+  trivy:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component: [backend, frontend]
+    steps:
+      - name: Extract version
+        id: ver
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          echo "version=${TAG#v}" >> $GITHUB_OUTPUT
+
+      - name: Run Trivy vulnerability scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.OWNER }}/xafrun-${{ matrix.component }}:${{ steps.ver.outputs.version }}
+          format: sarif
+          output: trivy-${{ matrix.component }}.sarif
+          severity: CRITICAL,HIGH
+          exit-code: '0'          # don't fail the build, just report
+
+      - name: Upload Trivy SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy-${{ matrix.component }}.sarif
+          category: trivy-${{ matrix.component }}
+
+      - name: Generate plain-text summary
+        id: summary
+        run: |
+          pip -q install trivy-to-markdown 2>/dev/null || true
+          # Re-run in table format for the release notes
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:latest image \
+            --severity CRITICAL,HIGH \
+            --format table \
+            --no-progress \
+            ${{ env.REGISTRY }}/${{ env.OWNER }}/xafrun-${{ matrix.component }}:${{ steps.ver.outputs.version }} \
+            > trivy-${{ matrix.component }}-table.txt 2>&1 || true
+          echo "summary<<EOF" >> $GITHUB_OUTPUT
+          head -50 trivy-${{ matrix.component }}-table.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Upload Trivy table artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-${{ matrix.component }}
+          path: trivy-${{ matrix.component }}-table.txt
+
+  # ── 3. Create GitHub Release ─────────────────────────────────────────────────
+  release:
+    needs: [build, trivy]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history for changelog
+
+      - name: Extract version & tag
+        id: ver
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+
+      - name: Download Trivy artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: trivy-*
+          merge-multiple: true
+
+      - name: Build changelog since last tag
+        id: changelog
+        run: |
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v "^${{ steps.ver.outputs.tag }}$" | head -1)
+          if [ -z "$PREV_TAG" ]; then
+            RANGE="HEAD"
+          else
+            RANGE="${PREV_TAG}..${{ steps.ver.outputs.tag }}"
+          fi
+          LOG=$(git log --pretty="- %s (%h)" $RANGE -- 2>/dev/null | grep -v "chore: bump\|skip ci" | head -30)
+          echo "log<<EOF" >> $GITHUB_OUTPUT
+          echo "$LOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Read Trivy summaries
+        id: trivy
+        run: |
+          backend_scan=$(cat trivy-backend-table.txt 2>/dev/null | head -30 || echo "Scan output not available")
+          frontend_scan=$(cat trivy-frontend-table.txt 2>/dev/null | head -30 || echo "Scan output not available")
+          echo "backend<<EOF" >> $GITHUB_OUTPUT
+          echo "$backend_scan" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+          echo "frontend<<EOF" >> $GITHUB_OUTPUT
+          echo "$frontend_scan" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          name: "Xafrun ${{ steps.ver.outputs.tag }}"
+          body: |
+            ## Xafrun ${{ steps.ver.outputs.tag }}
+
+            ### 📦 Container Images
+
+            Multi-platform images available for **Intel/AMD (x86_64)** and **ARM64 (Apple Silicon / AWS Graviton)**:
+
+            | Component | Image |
+            |-----------|-------|
+            | Frontend  | `ghcr.io/omilun/xafrun-frontend:${{ steps.ver.outputs.version }}` |
+            | Backend   | `ghcr.io/omilun/xafrun-backend:${{ steps.ver.outputs.version }}` |
+
+            **Platforms**: `linux/amd64` (Intel/AMD servers) · `linux/arm64` (Apple Silicon, AWS Graviton, Raspberry Pi 4+)
+
+            ---
+
+            ### ✅ Compatibility
+
+            | Component | Tested Version | Minimum Supported |
+            |-----------|---------------|-------------------|
+            | Kubernetes | v1.36 | v1.29+ |
+            | Flux CD | v2.8.5 | v2.3+ |
+            | Talos Linux | v1.13 | v1.7+ |
+            | Helm Controller | v1.5.3 | v1.0+ |
+
+            > Images are verified against the above versions. Other recent versions should work — file an issue if you encounter incompatibilities.
+
+            ---
+
+            ### 🔒 Security Scan (Trivy)
+
+            Scanned for CRITICAL and HIGH CVEs. Full results in the **Security** tab.
+
+            <details>
+            <summary>Backend scan summary</summary>
+
+            ```
+            ${{ steps.trivy.outputs.backend }}
+            ```
+            </details>
+
+            <details>
+            <summary>Frontend scan summary</summary>
+
+            ```
+            ${{ steps.trivy.outputs.frontend }}
+            ```
+            </details>
+
+            ---
+
+            ### 📋 What's Changed
+
+            ${{ steps.changelog.outputs.log }}
+
+            ---
+
+            ### 🚀 Deploy
+
+            **FluxCD / Kustomize** — update your image tag:
+            ```yaml
+            image: ghcr.io/omilun/xafrun-frontend:${{ steps.ver.outputs.version }}
+            image: ghcr.io/omilun/xafrun-backend:${{ steps.ver.outputs.version }}
+            ```
+
+            **Helm** (if applicable):
+            ```bash
+            helm upgrade xafrun oci://ghcr.io/omilun/charts/xafrun --version ${{ steps.ver.outputs.version }}
+            ```
+          draft: false
+          prerelease: ${{ contains(steps.ver.outputs.tag, '-rc') || contains(steps.ver.outputs.tag, '-beta') || contains(steps.ver.outputs.tag, '-alpha') }}

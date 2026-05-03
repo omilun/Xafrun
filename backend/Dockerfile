@@ -1,10 +1,16 @@
 # Backend Dockerfile
-FROM golang:1.26-alpine AS builder
+# Cross-compiles natively via Go's built-in cross-compilation (CGO disabled).
+# No QEMU required — works fast on any host arch for linux/amd64 and linux/arm64.
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS builder
+
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /app
-COPY . .
+COPY go.mod go.sum ./
 RUN go mod download
-RUN go build -o main .
+COPY . .
+RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o main .
 
 FROM alpine:latest
 RUN addgroup -S app && adduser -S app -G app

@@ -1,90 +1,48 @@
-name: Build and Push Images
+name: CI — Sync GitOps
 
+# Images are built locally (native arm64) and pushed manually.
+# This workflow only keeps the gitops manifests in sync when VERSION changes.
 on:
   push:
     branches: [master]
-    paths-ignore:
+    paths:
       - 'VERSION'
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (reads VERSION file if empty)'
+        required: false
 
 permissions:
-  contents: write
-  packages: write
-
-env:
-  REGISTRY: ghcr.io
+  contents: read
 
 jobs:
-  build:
+  update-gitops:
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.bump.outputs.version }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Bump patch version
-        id: bump
+      - name: Read version
+        id: ver
         run: |
-          VERSION=$(cat VERSION 2>/dev/null || echo "0.1.1")
-          MAJOR=$(echo $VERSION | cut -d. -f1)
-          MINOR=$(echo $VERSION | cut -d. -f2)
-          PATCH=$(echo $VERSION | cut -d. -f3)
-          NEW_PATCH=$((PATCH + 1))
-          NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
-          echo "$NEW_VERSION" > VERSION
-          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add VERSION
-          git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
-          git push
+          V="${{ github.event.inputs.version }}"
+          if [ -z "$V" ]; then V=$(cat VERSION); fi
+          echo "version=$V" >> $GITHUB_OUTPUT
 
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push backend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./backend
-          platforms: linux/arm64
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xafrun-backend:${{ steps.bump.outputs.version }}
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xafrun-backend:latest
-
-      - name: Build and push frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: ./frontend
-          platforms: linux/arm64
-          push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xafrun-frontend:${{ steps.bump.outputs.version }}
-            ${{ env.REGISTRY }}/${{ github.repository_owner }}/xafrun-frontend:latest
-
-  update-gitops:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
       - uses: actions/checkout@v4
         with:
           repository: omilun/Talos-on-macos
-          token: ${{ secrets.GITOPS_TOKEN || secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITOPS_TOKEN }}
+          path: gitops-repo
 
-      - name: Update image tags in gitops manifest
+      - name: Update image tags
         run: |
-          VERSION=${{ needs.build.outputs.version }}
-          sed -i "s|ghcr.io/omilun/xafrun-backend:[^ ]*|ghcr.io/omilun/xafrun-backend:${VERSION}|g" gitops/apps/xafrun/deploy/backend.yaml
-          sed -i "s|ghcr.io/omilun/xafrun-frontend:[^ ]*|ghcr.io/omilun/xafrun-frontend:${VERSION}|g" gitops/apps/xafrun/deploy/frontend.yaml
+          VERSION=${{ steps.ver.outputs.version }}
+          sed -i "s|ghcr.io/omilun/xafrun-backend:[^ ]*|ghcr.io/omilun/xafrun-backend:${VERSION}|g" gitops-repo/gitops/apps/xafrun/deploy/backend.yaml
+          sed -i "s|ghcr.io/omilun/xafrun-frontend:[^ ]*|ghcr.io/omilun/xafrun-frontend:${VERSION}|g" gitops-repo/gitops/apps/xafrun/deploy/frontend.yaml
+          cd gitops-repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add gitops/apps/xafrun/deploy/backend.yaml gitops/apps/xafrun/deploy/frontend.yaml
-          git diff --staged --quiet || git commit -m "chore: update xafrun images to $VERSION"
+          git diff --staged --quiet || git commit -m "chore: update xafrun images to ${VERSION}"
           git push
