@@ -28,7 +28,7 @@ jobs:
     outputs:
       version: ${{ steps.meta.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
       - name: Extract version from tag
         id: meta
@@ -105,7 +105,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Upload Trivy table artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.2
         with:
           name: trivy-${{ matrix.component }}
           path: trivy-${{ matrix.component }}-table.txt
@@ -115,7 +115,7 @@ jobs:
     needs: [build, trivy]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0  # full history for changelog
 
@@ -128,7 +128,7 @@ jobs:
           echo "tag=${TAG}" >> $GITHUB_OUTPUT
 
       - name: Download Trivy artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.3.0
         with:
           pattern: trivy-*
           merge-multiple: true
@@ -160,7 +160,7 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.3.2
         with:
           tag_name: ${{ steps.ver.outputs.tag }}
           name: "Xafrun ${{ steps.ver.outputs.tag }}"
