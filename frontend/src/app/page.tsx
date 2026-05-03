@@ -52,12 +52,12 @@ export default function Home() {
   }), [apps, search, healthFilter]);
 
   useEffect(() => {
-    fetch('/api/info').then((r) => r.json()).then((d) => setInfo(d)).catch(() => {});
+    fetch('/api/proxy/info').then((r) => r.json()).then((d) => setInfo(d)).catch(() => {});
   }, []);
 
   const connect = useCallback(() => {
-    fetch('/api/tree').then((r) => r.json()).then((data) => setGraph(data)).catch(() => {});
-    const es = new EventSource('/api/events');
+    fetch('/api/proxy/tree').then((r) => r.json()).then((data) => setGraph(data)).catch(() => {});
+    const es = new EventSource('/api/proxy/events');
     es.addEventListener('graph', (e: MessageEvent) => {
       try { setGraph(JSON.parse(e.data)); setStatus('live'); } catch { /* ignore */ }
     });
