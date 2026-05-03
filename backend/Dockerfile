@@ -7,7 +7,10 @@ RUN go mod download
 RUN go build -o main .
 
 FROM alpine:latest
-WORKDIR /root/
+RUN addgroup -S app && adduser -S app -G app
+WORKDIR /app
 COPY --from=builder /app/main .
+RUN chown app:app /app/main
+USER app
 EXPOSE 8080
 CMD ["./main"]
