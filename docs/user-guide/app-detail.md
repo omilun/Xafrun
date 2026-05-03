@@ -37,6 +37,21 @@ Inventory nodes are grouped by kind when laid out.
 !!! note
     Inventory node health status is shown as **Unknown** by default — Xafrun does not make additional API calls to check the live status of each inventory item (this would multiply the API load). The status shown for the App node itself (Kustomization / HelmRelease) is always accurate.
 
+## Node colours
+
+Each K8s inventory node has a **coloured left-stripe accent** indicating its category:
+
+| Category | Colour | Kinds |
+|----------|--------|-------|
+| Workloads | 🔵 Blue/Indigo | Deployment, StatefulSet, DaemonSet, ReplicaSet, Job, CronJob, Pod |
+| Services | 🩵 Teal | Service |
+| Networking | 🟢 Lime/Emerald | Ingress, IngressRoute, HTTPRoute, Gateway |
+| Config | 🟡 Amber/Orange | ConfigMap, Secret, PersistentVolumeClaim |
+| RBAC | 🩷 Pink/Rose | ClusterRole, ClusterRoleBinding, Role, RoleBinding, ServiceAccount |
+| Cert-manager | 🩵 Cyan | Certificate, Issuer, ClusterIssuer |
+
+Flux source and app nodes also have kind-based accent stripes (GitRepository=teal, Kustomization=indigo, HelmRelease=amber, etc.).
+
 ## Navigating back
 
 Use the **Back** button in the top-left or the breadcrumb (`Apps › [app-name]`) to return to the App List.

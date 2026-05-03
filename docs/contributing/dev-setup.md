@@ -6,8 +6,8 @@ Follow these steps to set up a full local development environment.
 
 | Tool | Version | Notes |
 |------|---------|-------|
-| Go | ≥ 1.22 | [go.dev/dl](https://go.dev/dl/) |
-| Node.js | ≥ 18 | [nodejs.org](https://nodejs.org/) |
+| Go | ≥ 1.26 | [go.dev/dl](https://go.dev/dl/) |
+| Node.js | ≥ 22 | [nodejs.org](https://nodejs.org/) |
 | `kubectl` | any recent | must have a valid context pointing at a cluster with Flux |
 | `make` | any | ships with most Unix/macOS systems |
 | `git` | any | — |

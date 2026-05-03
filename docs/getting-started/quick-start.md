@@ -36,7 +36,7 @@ flux install
 === "Kustomize"
 
     ```bash
-    kubectl apply -k github.com/omilun/Xafrun//deploy?ref=v0.1.0
+    kubectl apply -k github.com/omilun/Xafrun//deploy?ref=v0.1.6
     ```
 
 ## 4. Port-forward and open

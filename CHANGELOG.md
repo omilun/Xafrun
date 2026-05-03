@@ -7,6 +7,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-05-03
+
+### Changed — Frontend (v0.1.6)
+
+- **ArgoCD-style graph hierarchy** — App detail view now uses TB (top-down) layout with a
+  single unified Dagre graph: Source → App → K8s inventory spread across the bottom.
+  Edges fan out naturally across the full width (no more fan-out from a single point).
+  Main overview retains LR (left-right) layout. All edges use `smoothstep` curves.
+- **Category-colored K8s inventory nodes** — each node has a left accent stripe by category:
+  - 🔵 Workloads (Deployment, StatefulSet, DaemonSet, Job, CronJob, Pod) — blue/indigo/violet
+  - 🩵 Services — teal
+  - 🟢 Networking (Ingress, IngressRoute, HTTPRoute, Gateway) — lime/emerald
+  - 🟡 Config (ConfigMap, Secret, PVC) — amber/orange/stone
+  - 🩷 RBAC (ClusterRole, ClusterRoleBinding, Role, RoleBinding, ServiceAccount) — pink/rose
+  - 🩵 Cert-manager (Certificate, Issuer, ClusterIssuer) — cyan
+- **Flux node accent stripes** — each Flux kind now has a color-coded left stripe and badge
+  (GitRepository=teal, Kustomization=indigo, HelmRelease=amber, OCIRepository=cyan, etc.)
+- **Dynamic handle positions** — LR layout uses Left/Right handles; TB layout uses Top/Bottom
+  handles. Edges always connect at the correct side.
+- **Status ticker relocated to toolbar** — the NewsTicker is now a compact inline scrolling
+  chip on the right side of the filter toolbar bar. No more floating bottom-left overlay.
+- **Filter chips with live counts** — the merged toolbar shows All/Healthy/Unhealthy/Progressing
+  chips that display live resource counts AND act as filters when clicked.
+
+### Added — CI/CD
+
+- **Release workflow** (`.github/workflows/release.yaml`) — triggered on `v*` tags:
+  builds `linux/amd64` + `linux/arm64` multi-platform images, runs Trivy CRITICAL/HIGH
+  vulnerability scan, uploads SARIF to GitHub Security, creates GitHub Release with
+  compatibility matrix and scan summary.
+- **Local release script** (`scripts/release.sh`) — interactive helper for bumping version,
+  building multi-arch images locally, tagging, and pushing to trigger the release workflow.
+- **Backend Dockerfile** — uses `--platform=$BUILDPLATFORM` for native Go cross-compilation;
+  no QEMU required, avoids memory exhaustion on constrained builders.
+
+### Changed — CI/CD
+
+- `build-push.yaml` simplified: no longer builds images (done locally or via release.yaml).
+  Now only syncs gitops manifests when `VERSION` changes.
+
+### Fixed
+
+- Backend Dockerfile: `WORKDIR /root/` (700 permissions) → `/app` with dedicated `app` user,
+  fixes `exec format error` for non-root user 65532.
+- `watcher.go`: replaced removed `sourcev1.CrossNamespaceSourceReference` with local
+  `sourceRef` struct, compatible with source-controller v1.8+.
+
 ## [0.3.0]
 
 ### Changed — Frontend (ArgoCD-style redesign)
@@ -118,7 +165,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Server-Sent Events (`/api/events`) for live updates.
 - REST endpoints `/api/tree`, `/api/info`.
 
-[Unreleased]: https://github.com/omilun/Xafrun/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/omilun/Xafrun/compare/v0.2.0...v0.3.0
-[0.2.0]: https://github.com/omilun/Xafrun/compare/v0.1.0...v0.2.0
+[Unreleased]: https://github.com/omilun/Xafrun/compare/v0.1.6...HEAD
+[0.1.6]: https://github.com/omilun/Xafrun/compare/v0.1.0...v0.1.6
 [0.1.0]: https://github.com/omilun/Xafrun/releases/tag/v0.1.0

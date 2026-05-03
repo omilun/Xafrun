@@ -30,10 +30,12 @@ Each card represents one `Kustomization` or `HelmRelease` that an operator deplo
 
 ### Filter bar
 
-At the top of the App List:
+The toolbar below the header contains:
 
-- **Search** — filter cards by name in real time.
-- **Health filter** — show All / Healthy / Unhealthy cards.
+- **Search** — filter cards by name or namespace in real time.
+- **Health filter chips** — clickable pills showing `All`, `Healthy`, `Unhealthy`, and `Progressing`, each with a **live count badge**. Click to filter; click again to clear. A **Clear** button appears when a filter is active.
+- **N / Total counter** — shows `filtered / total` count when a filter or search is active.
+- **Status ticker** — far right of the toolbar; a compact scrolling chip showing cluster health. Green when all resources are healthy; red when one or more are unhealthy.
 
 ## App Detail (second screen)
 

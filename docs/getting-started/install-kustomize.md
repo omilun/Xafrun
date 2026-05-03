@@ -5,7 +5,7 @@ Install Xafrun using `kubectl apply -k` (no Helm required).
 ## Apply the base manifests
 
 ```bash
-kubectl apply -k github.com/omilun/Xafrun//deploy?ref=v0.1.0
+kubectl apply -k github.com/omilun/Xafrun//deploy?ref=v0.1.6
 ```
 
 This creates:
@@ -31,7 +31,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
-  - github.com/omilun/Xafrun//deploy?ref=v0.1.0
+  - github.com/omilun/Xafrun//deploy?ref=v0.1.6
 
 namespace: xafrun
 
@@ -66,7 +66,7 @@ To update to a newer release, change the `ref` in your `kustomization.yaml`:
 
 ```yaml
 resources:
-  - github.com/omilun/Xafrun//deploy?ref=v0.2.0
+  - github.com/omilun/Xafrun//deploy?ref=v0.1.6
 ```
 
 Then re-apply:
@@ -76,10 +76,10 @@ kubectl apply -k my-overlay/
 ```
 
 !!! tip
-    Pin to a specific Git tag (`?ref=v0.1.0`) rather than a branch for reproducible deployments in GitOps pipelines.
+    Pin to a specific Git tag (`?ref=v0.1.6`) rather than a branch for reproducible deployments in GitOps pipelines.
 
 ## Uninstalling
 
 ```bash
-kubectl delete -k github.com/omilun/Xafrun//deploy?ref=v0.1.0
+kubectl delete -k github.com/omilun/Xafrun//deploy?ref=v0.1.6
 ```

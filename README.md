@@ -4,7 +4,7 @@
 
 **See your Flux.** A real-time, visual GitOps dashboard for [Flux CD](https://fluxcd.io).
 
-[![Built in-cluster](https://img.shields.io/badge/CI-Argo%20Workflows-EF7B4D?logo=argo)](https://github.com/omilun/Talos-on-macos/tree/main/gitops/apps/xafrun/ci)
+[![CI](https://github.com/omilun/Xafrun/actions/workflows/release.yaml/badge.svg)](https://github.com/omilun/Xafrun/actions/workflows/release.yaml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/omilun/xafrun)](https://goreportcard.com/report/github.com/omilun/xafrun)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Helm](https://img.shields.io/badge/Helm-chart-0F1689?logo=helm)](charts/xafrun)
@@ -32,8 +32,7 @@ healthy, and what's broken.
   in a tabbed side-panel.
 - ⚡ **Real-time updates over SSE** — driven by Kubernetes informers, no polling.
 - 🔧 **Reconcile / Suspend / Resume** — trigger Flux actions directly from the UI.
-- 📰 **Status ticker** — collapsible bottom bar that pulses red on errors and
-  scrolls cluster metadata (K8s / Flux / CNI / OS versions) when healthy.
+- 📰 **Status ticker** — inline toolbar chip that scrolls cluster metadata (K8s/Flux/CNI/OS versions) when healthy, turns red and shows error details when unhealthy.
 - 🪶 **Lightweight** — a single Go service + a small Next.js pod.
   Read-only RBAC (plus patch for Flux CRDs), hardened security context, signed images with SBOMs.
 
@@ -44,14 +43,7 @@ healthy, and what's broken.
 ```bash
 # Install from public OCI registry (GitHub Container Registry)
 helm install xafrun oci://ghcr.io/omilun/charts/xafrun \
-  --version 0.2.0 \
-  --namespace xafrun --create-namespace
-```
-
-> Self-hosted cluster? Pull from the in-cluster Zot registry instead:
-> ```bash
-> helm install xafrun oci://registry.<your-cluster>/charts/xafrun \
->   --version 0.2.0 --namespace xafrun --create-namespace
+  --version 0.1.6 \ --namespace xafrun --create-namespace
 > ```
 
 Then port-forward:
@@ -64,7 +56,7 @@ open http://localhost:3000
 ### Kustomize
 
 ```bash
-kubectl apply -k github.com/omilun/Xafrun//deploy?ref=v0.1.0
+kubectl apply -k github.com/omilun/Xafrun//deploy?ref=v0.1.6
 ```
 
 ### Local development
@@ -119,7 +111,7 @@ Architecture deep-dive → [Architecture overview](https://github.com/omilun/Xaf
 
 | Tool                       | Version                       |
 |----------------------------|-------------------------------|
-| Kubernetes                 | 1.28+                         |
+| Kubernetes                 | 1.29+                         |
 | [Flux CD](https://fluxcd.io) | v2.x                        |
 | Go (for local builds)      | 1.26+                         |
 | Node.js (for local builds) | 22+                           |
@@ -132,22 +124,21 @@ and our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 For security issues, please follow the disclosure process in [SECURITY.md](SECURITY.md).
 
-### How CI works (no GitHub Actions)
+### How CI / releases work
 
-Xafrun is built and released by an **in-cluster pipeline** running on
-[Argo Workflows](https://argoproj.github.io/argo-workflows/) + [Argo Events](https://argoproj.github.io/argo-events/) +
-[BuildKit](https://github.com/moby/buildkit), with images pushed to a
-[Zot](https://zotregistry.dev/) OCI registry inside the cluster.
-
-The pipeline definitions live in
-[`Talos-on-macos/gitops/apps/xafrun/ci/`](https://github.com/omilun/Talos-on-macos/tree/main/gitops/apps/xafrun/ci):
+Xafrun uses **GitHub Actions** for official releases. Local development builds use native Apple Silicon arm64 Docker builds.
 
 | Trigger | Workflow | What it does |
 |---|---|---|
-| `push` to `master` | `xafrun-test` → `xafrun-build` → `xafrun-scan` | Lint + tests, multi-arch images, Trivy scan |
-| `tag` `v*.*.*` | `xafrun-release` | Tagged images, cosign signing, Helm OCI push |
-| Daily 06:00 UTC | `xafrun-nightly-scan` (CronWorkflow) | Trivy CVE re-scan |
-| `push` to `master` (docs) | `xafrun-docs` | Build MkDocs site, publish to docs gateway |
+| Push to `master` (VERSION change) | `CI — Sync GitOps` | Updates image tags in the GitOps manifests repo |
+| Push `v*` tag | `Release` | Builds `linux/amd64` + `linux/arm64` images, runs Trivy security scan, creates GitHub Release with compatibility notes |
+
+To create a new release:
+```bash
+./scripts/release.sh           # patch bump (0.1.6 → 0.1.7)
+./scripts/release.sh --minor   # minor bump
+./scripts/release.sh 1.0.0     # explicit version
+```
 
 ## 🛣️ Roadmap
 
