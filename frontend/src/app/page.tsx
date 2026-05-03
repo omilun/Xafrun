@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import Image from 'next/image';
-import { RefreshCcw, Search } from 'lucide-react';
+import { RefreshCcw, Search, X } from 'lucide-react';
 import type { ReactFlowInstance } from 'reactflow';
 import { AppList } from '@/components/AppList';
 import { AppDetail } from '@/components/AppDetail';
@@ -13,6 +13,15 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { FluxGraph, FluxNode, ClusterInfo, APP_KINDS, isOrchestratorKustomization } from '@/types';
 
 type ConnStatus = 'connecting' | 'live' | 'error';
+
+function StatPill({ label, value, cls }: { label: string; value: number; cls: string }) {
+  return (
+    <div className="flex flex-col items-center leading-none">
+      <span className={`text-sm font-bold tabular-nums ${cls}`}>{value}</span>
+      <span className="text-[9px] font-medium uppercase tracking-widest text-slate-400 dark:text-gray-500 mt-0.5">{label}</span>
+    </div>
+  );
+}
 type HealthFilter = 'all' | 'Healthy' | 'Unhealthy' | 'Progressing';
 
 const FILTER_CONFIG: { key: HealthFilter; label: string; dot: string; text: string; active: string }[] = [
@@ -118,6 +127,7 @@ export default function Home() {
               </p>
             </div>
           </button>
+        </div>
 
         {/* Right: cluster info + connection status */}
         <div className="flex items-center gap-3 shrink-0">
