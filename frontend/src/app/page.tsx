@@ -133,7 +133,10 @@ export default function Home() {
 
           {!selectedApp && graph && (
             <div className="flex items-center gap-6 border-l border-slate-100 dark:border-gray-800 pl-8">
-
+              <StatPill label="Total" value={stats.total} cls="text-slate-600 dark:text-gray-300" />
+              <StatPill label="Healthy" value={stats.healthy} cls="text-green-600 dark:text-green-400" />
+              <StatPill label="Unhealthy" value={stats.unhealthy} cls="text-red-600 dark:text-red-400" />
+              <StatPill label="Progressing" value={stats.progressing} cls="text-blue-600 dark:text-blue-400" />
             </div>
           )}
         </div>
@@ -253,3 +256,13 @@ const Loader = () => (
     <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin" />
   </div>
 );
+
+function StatPill({ label, value, cls }: { label: string; value: number; cls: string }) {
+  return (
+    <div className="flex flex-col items-start leading-none gap-1">
+      <span className={`text-base font-black ${cls}`}>{value}</span>
+      <span className="text-[9px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-tighter">{label}</span>
+    </div>
+  );
+}
+
