@@ -178,16 +178,6 @@ function layoutDetailGraph(data: FluxGraph, appNode: FluxNode): { nodes: Node[];
     markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
   }));
 
-  const invEdges: Edge[] = inventoryItems.map((_, i) => ({
-    id: `inv-edge-${i}`,
-    source: appNode.id,
-    target: `inv-${i}`,
-    type: 'smoothstep',
-    animated: false,
-    style: { stroke: '#cbd5e1', strokeWidth: 1.5 },
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#cbd5e1', width: 12, height: 12 },
-  }));
-
   return { nodes: [...fluxNodes, ...invNodes], edges: [...fluxEdges, ...invEdges] };
 }
 
