@@ -5,9 +5,11 @@ import { FluxNode, ClusterInfo } from '../types';
 interface NewsTickerProps {
   nodes: FluxNode[];
   info: ClusterInfo | null;
+  /** When true, renders as a compact inline chip instead of a floating bottom bar */
+  inline?: boolean;
 }
 
-export function NewsTicker({ nodes, info }: NewsTickerProps) {
+export function NewsTicker({ nodes, info, inline }: NewsTickerProps) {
   const [userExpanded, setUserExpanded] = useState(false);
 
   const unhealthy = nodes.filter(
@@ -43,12 +45,41 @@ export function NewsTicker({ nodes, info }: NewsTickerProps) {
   }, [info, isHealthy, unhealthy]);
 
   const duration = Math.max(20, Math.ceil(tickerText.length * 0.15));
-
   const colorClass = isHealthy ? 'text-green-500' : 'text-red-500';
-  const glowClass = isHealthy ? 'shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'shadow-[0_0_15px_rgba(239,68,68,0.4)]';
-  const bgClass = isHealthy ? 'bg-emerald-50/90' : 'bg-red-50/90';
-  const textClass = isHealthy ? 'text-emerald-900' : 'text-red-900';
+  const glowClass  = isHealthy ? 'shadow-[0_0_15px_rgba(34,197,94,0.4)]' : 'shadow-[0_0_15px_rgba(239,68,68,0.4)]';
+  const bgClass    = isHealthy ? 'bg-emerald-50/90' : 'bg-red-50/90';
+  const textClass  = isHealthy ? 'text-emerald-900' : 'text-red-900';
 
+  /* ── Inline mode: compact chip in the toolbar ── */
+  if (inline) {
+    return (
+      <div className={`flex items-center gap-1.5 h-7 rounded-full border px-2.5 overflow-hidden max-w-[320px]
+                       ${isHealthy
+                         ? 'bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-800'
+                         : 'bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-800'
+                       }`}>
+        <style>{`
+          @keyframes xafrun-ticker-inline {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(calc(-100% + 240px)); }
+          }
+          .xafrun-ticker-inline {
+            animation: xafrun-ticker-inline ${duration}s linear infinite alternate;
+            white-space: nowrap;
+            display: inline-block;
+          }
+        `}</style>
+        <TowerControl className={`w-3.5 h-3.5 shrink-0 ${colorClass}`} />
+        <div className="overflow-hidden relative flex-1">
+          <span className={`xafrun-ticker-inline text-[10px] font-semibold ${textClass} uppercase tracking-tight`}>
+            {tickerText}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Floating mode (original, non-inline) ── */
   if (!expanded) {
     return (
       <button

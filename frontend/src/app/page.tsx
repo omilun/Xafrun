@@ -155,7 +155,7 @@ export default function Home() {
           <div className="h-4 w-[1px] bg-slate-200 dark:bg-gray-700 shrink-0" />
 
           {/* Merged stat + filter chips — clicking filters the list */}
-          <div className="flex items-center gap-2 flex-1">
+          <div className="flex items-center gap-2">
             {FILTER_CONFIG.map(({ key, label, dot, text, active }) => {
               const count = key === 'all' ? counts.all : counts[key as keyof typeof counts];
               const isActive = healthFilter === key;
@@ -194,15 +194,20 @@ export default function Home() {
 
           {/* Showing N of M */}
           {(search || healthFilter !== 'all') && (
-            <span className="text-[10px] text-slate-400 dark:text-gray-500 shrink-0 font-mono">
+            <span className="text-[10px] text-slate-400 dark:text-gray-500 font-mono shrink-0">
               {filteredApps.length} / {counts.all}
             </span>
           )}
+
+          {/* Inline status ticker */}
+          <div className="ml-auto shrink-0">
+            <NewsTicker nodes={graph.nodes} info={info} inline />
+          </div>
         </div>
       )}
 
       {/* ── Main content ─────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-hidden pb-9">
+      <div className="flex-1 overflow-hidden">
         {status === 'connecting' && !graph ? (
           <div className="flex items-center justify-center h-full">
             <div className="flex flex-col items-center gap-3">
@@ -239,9 +244,6 @@ export default function Home() {
           </ErrorBoundary>
         ) : null}
       </div>
-
-      {/* ── News Ticker ───────────────────────────────────────────── */}
-      {graph && <NewsTicker nodes={graph.nodes} info={info} />}
 
       {/* ── Command Palette ───────────────────────────────────────── */}
       <CommandPalette

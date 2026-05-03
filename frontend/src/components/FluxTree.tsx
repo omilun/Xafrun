@@ -24,130 +24,122 @@ const nodeTypes = {
   k8sNode:       K8sInventoryNode,
 };
 
-const FLUX_NODE_WIDTH  = 260;
+const FLUX_NODE_WIDTH  = 240;
 const FLUX_NODE_HEIGHT = 80;
 const K8S_NODE_WIDTH   = 200;
-const K8S_NODE_HEIGHT  = 52;
+const K8S_NODE_HEIGHT  = 56;
 
-function buildInventoryNodes(appNode: FluxNode): { nodes: Node[]; edges: Edge[] } {
+/**
+ * Main graph layout: LR (left-to-right) for the Flux resource overview.
+ * Only contains Flux nodes (Sources, Kustomizations, HelmReleases, etc.)
+ * No inventory items.
+ */
+function layoutMainGraph(data: FluxGraph): { nodes: Node[]; edges: Edge[] } {
+  const g = new Dagre.graphlib.Graph();
+  g.setDefaultEdgeLabel(() => ({}));
+  g.setGraph({ rankdir: 'LR', ranksep: 180, nodesep: 80, marginx: 80, marginy: 80 });
+
+  data.nodes.forEach((n) => g.setNode(n.id, { width: FLUX_NODE_WIDTH, height: FLUX_NODE_HEIGHT }));
+  data.edges.forEach((e) => g.setEdge(e.source, e.target));
+  Dagre.layout(g);
+
+  const fluxNodes: Node[] = data.nodes.map((n) => {
+    const { x, y } = g.node(n.id);
+    return {
+      id: n.id,
+      type: 'fluxNode',
+      data: { ...n, _layout: 'lr' },
+      position: { x: x - FLUX_NODE_WIDTH / 2, y: y - FLUX_NODE_HEIGHT / 2 },
+    };
+  });
+
+  const fluxEdges: Edge[] = data.edges.map((e) => ({
+    ...e,
+    type: 'smoothstep',
+    animated: true,
+    style: { stroke: '#94a3b8', strokeWidth: 2 },
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
+  }));
+
+  return { nodes: fluxNodes, edges: fluxEdges };
+}
+
+/**
+ * Detail graph layout: TB (top-to-bottom) for the app detail view.
+ * Merges Flux nodes + all inventory K8s items into a single Dagre graph
+ * so edges fan out naturally across the full width instead of from one point.
+ */
+function layoutDetailGraph(data: FluxGraph, appNode: FluxNode): { nodes: Node[]; edges: Edge[] } {
   const inventoryItems = (appNode.inventory ?? []).map(parseInventoryId);
-  if (inventoryItems.length === 0) return { nodes: [], edges: [] };
 
   const g = new Dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: 'LR', ranksep: 80, nodesep: 30, marginx: 40, marginy: 40 });
+  g.setGraph({ rankdir: 'TB', ranksep: 100, nodesep: 24, marginx: 60, marginy: 60 });
 
-  inventoryItems.forEach((item, i) => {
-    g.setNode(`inv-${i}`, { width: K8S_NODE_WIDTH, height: K8S_NODE_HEIGHT });
-  });
+  // Add all Flux nodes (source + app node)
+  data.nodes.forEach((n) => g.setNode(n.id, { width: FLUX_NODE_WIDTH, height: FLUX_NODE_HEIGHT }));
+  data.edges.forEach((e) => g.setEdge(e.source, e.target));
+
+  // Add all inventory nodes
+  inventoryItems.forEach((_, i) => g.setNode(`inv-${i}`, { width: K8S_NODE_WIDTH, height: K8S_NODE_HEIGHT }));
+
+  // Connect app node → each inventory item
+  inventoryItems.forEach((_, i) => g.setEdge(appNode.id, `inv-${i}`));
 
   Dagre.layout(g);
 
-  const nodes: Node[] = inventoryItems.map((item, i) => {
+  const fluxNodes: Node[] = data.nodes.map((n) => {
+    const { x, y } = g.node(n.id);
+    return {
+      id: n.id,
+      type: 'fluxNode',
+      data: { ...n, _layout: 'tb' },
+      position: { x: x - FLUX_NODE_WIDTH / 2, y: y - FLUX_NODE_HEIGHT / 2 },
+    };
+  });
+
+  const invNodes: Node[] = inventoryItems.map((item, i) => {
     const { x, y } = g.node(`inv-${i}`);
     return {
       id: `inv-${i}`,
       type: 'k8sNode',
       data: item,
       position: { x: x - K8S_NODE_WIDTH / 2, y: y - K8S_NODE_HEIGHT / 2 },
-      sourcePosition: Position.Right,
-      targetPosition: Position.Left,
-    };
-  });
-
-  // Connect app node to each inventory item
-  const edges: Edge[] = inventoryItems.map((_, i) => ({
-    id: `inv-edge-${i}`,
-    source: appNode.id,
-    target: `inv-${i}`,
-    animated: false,
-    style: { stroke: '#cbd5e1', strokeWidth: 1.5 },
-    markerEnd: { type: MarkerType.ArrowClosed, color: '#cbd5e1' },
-  }));
-
-  return { nodes, edges };
-}
-
-function layoutWithDagre(data: FluxGraph, appNode?: FluxNode): { nodes: Node[]; edges: Edge[] } {
-  const g = new Dagre.graphlib.Graph();
-  g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({
-    rankdir: 'LR',
-    ranksep: 200,
-    nodesep: 100,
-    marginx: 100,
-    marginy: 100,
-  });
-
-  data.nodes.forEach((n) => {
-    g.setNode(n.id, { width: FLUX_NODE_WIDTH, height: FLUX_NODE_HEIGHT });
-  });
-  data.edges.forEach((e) => {
-    g.setEdge(e.source, e.target);
-  });
-
-  Dagre.layout(g);
-
-  let fluxNodes: Node[] = data.nodes.map((n) => {
-    const { x, y } = g.node(n.id);
-    return {
-      id: n.id,
-      type: 'fluxNode',
-      data: n,
-      position: { x: x - FLUX_NODE_WIDTH / 2, y: y - FLUX_NODE_HEIGHT / 2 },
-      sourcePosition: Position.Right,
-      targetPosition: Position.Left,
     };
   });
 
   const fluxEdges: Edge[] = data.edges.map((e) => ({
     ...e,
+    type: 'smoothstep',
     animated: true,
     style: { stroke: '#94a3b8', strokeWidth: 2 },
     markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
   }));
 
-  // If in detail mode, append inventory nodes to the right of the app node
-  if (appNode && appNode.inventory && appNode.inventory.length > 0) {
-    const appRfNode = fluxNodes.find((n) => n.id === appNode.id);
-    const appY = appRfNode ? appRfNode.position.y : 0;
-    const appX = appRfNode ? appRfNode.position.x : 0;
+  const invEdges: Edge[] = inventoryItems.map((_, i) => ({
+    id: `inv-edge-${i}`,
+    source: appNode.id,
+    target: `inv-${i}`,
+    type: 'smoothstep',
+    animated: false,
+    style: { stroke: '#cbd5e1', strokeWidth: 1.5 },
+    markerEnd: { type: MarkerType.ArrowClosed, color: '#cbd5e1', width: 12, height: 12 },
+  }));
 
-    const { nodes: invNodes, edges: invEdges } = buildInventoryNodes(appNode);
-
-    // Offset inventory nodes to the right of the app node
-    const invOffsetX = appX + FLUX_NODE_WIDTH + 150;
-    
-    // Centre them vertically around the app node
-    const totalInvHeight = invNodes.reduce((sum) => sum + K8S_NODE_HEIGHT + 20, 0);
-    const invStartY = appY + FLUX_NODE_HEIGHT / 2 - totalInvHeight / 2;
-
-    const offsetInvNodes = invNodes.map((n, idx) => ({
-      ...n,
-      position: {
-        x: invOffsetX,
-        y: invStartY + idx * (K8S_NODE_HEIGHT + 20),
-      },
-    }));
-
-    fluxNodes = [...fluxNodes, ...offsetInvNodes];
-    return { nodes: fluxNodes, edges: [...fluxEdges, ...invEdges] };
-  }
-
-  return { nodes: fluxNodes, edges: fluxEdges };
+  return { nodes: [...fluxNodes, ...invNodes], edges: [...fluxEdges, ...invEdges] };
 }
 
 interface FluxTreeProps {
   data: FluxGraph;
   onNodeClick?: (node: DrawerNode) => void;
   rfInstanceRef?: React.MutableRefObject<ReactFlowInstance | null>;
-  /** When set, inventory nodes are shown for this app */
+  /** When set, inventory nodes are shown for this app using TB layout */
   focusedApp?: FluxNode;
 }
 
 const FluxTree = ({ data, onNodeClick, rfInstanceRef, focusedApp }: FluxTreeProps) => {
   const { nodes, edges } = useMemo(
-    () => layoutWithDagre(data, focusedApp),
+    () => focusedApp ? layoutDetailGraph(data, focusedApp) : layoutMainGraph(data),
     [data, focusedApp]
   );
   const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
