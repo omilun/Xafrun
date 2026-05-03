@@ -83,8 +83,70 @@ function layoutDetailGraph(data: FluxGraph, appNode: FluxNode): { nodes: Node[];
   // Add all inventory nodes
   inventoryItems.forEach((_, i) => g.setNode(`inv-${i}`, { width: K8S_NODE_WIDTH, height: K8S_NODE_HEIGHT }));
 
-  // Connect app node → each inventory item
-  inventoryItems.forEach((_, i) => g.setEdge(appNode.id, `inv-${i}`));
+  // Hierarchy logic: Group related inventory items to create a nice ArgoCD-style tree
+  const kindRank: Record<string, number> = {
+    'Deployment': 1, 'StatefulSet': 1, 'DaemonSet': 1, 'CronJob': 1, 'Job': 1,
+    'Service': 2,
+    'Ingress': 3, 'HTTPRoute': 3,
+    'ConfigMap': 4, 'Secret': 4,
+    'ServiceAccount': 5, 'Role': 6, 'ClusterRole': 6, 'RoleBinding': 7, 'ClusterRoleBinding': 7
+  };
+  const getRank = (kind: string) => kindRank[kind] || 99;
+
+  const itemsWithIdx = inventoryItems.map((item, idx) => ({ item, idx }));
+  
+  // Sort primarily by rank ascending, then by name length
+  itemsWithIdx.sort((a, b) => {
+    if (getRank(a.item.kind) !== getRank(b.item.kind)) {
+      return getRank(a.item.kind) - getRank(b.item.kind);
+    }
+    return a.item.name.length - b.item.name.length;
+  });
+
+  const parentMap = new Map<number, number>();
+
+  for (let i = 0; i < itemsWithIdx.length; i++) {
+    const child = itemsWithIdx[i];
+    
+    // Look backwards for a suitable parent (lower rank, name matches or is prefix)
+    for (let j = i - 1; j >= 0; j--) {
+      const potentialParent = itemsWithIdx[j];
+      if (getRank(potentialParent.item.kind) >= getRank(child.item.kind)) continue;
+      
+      if (child.item.name === potentialParent.item.name || child.item.name.startsWith(potentialParent.item.name + '-')) {
+        parentMap.set(child.idx, potentialParent.idx);
+        break; 
+      }
+    }
+  }
+
+  const invEdges: Edge[] = [];
+  itemsWithIdx.forEach(({ idx }) => {
+    const parentIdx = parentMap.get(idx);
+    if (parentIdx !== undefined) {
+      g.setEdge(`inv-${parentIdx}`, `inv-${idx}`);
+      invEdges.push({
+        id: `inv-edge-${parentIdx}-${idx}`,
+        source: `inv-${parentIdx}`,
+        target: `inv-${idx}`,
+        type: 'smoothstep',
+        animated: false,
+        style: { stroke: '#cbd5e1', strokeWidth: 1.5 },
+        markerEnd: { type: MarkerType.ArrowClosed, color: '#cbd5e1', width: 12, height: 12 },
+      });
+    } else {
+      g.setEdge(appNode.id, `inv-${idx}`);
+      invEdges.push({
+        id: `inv-edge-root-${idx}`,
+        source: appNode.id,
+        target: `inv-${idx}`,
+        type: 'smoothstep',
+        animated: false,
+        style: { stroke: '#cbd5e1', strokeWidth: 1.5 },
+        markerEnd: { type: MarkerType.ArrowClosed, color: '#cbd5e1', width: 12, height: 12 },
+      });
+    }
+  });
 
   Dagre.layout(g);
 
