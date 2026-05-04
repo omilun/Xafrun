@@ -6,13 +6,14 @@ Run Xafrun locally against your current `kubectl` context.
 
 | Tool | Minimum version | Install |
 |------|----------------|---------|
-| Go | 1.22 | [go.dev/dl](https://go.dev/dl/) |
-| Node.js | 18 | [nodejs.org](https://nodejs.org/) |
+| Go | 1.26 | [go.dev/dl](https://go.dev/dl/) |
+| Node.js | 22 | [nodejs.org](https://nodejs.org/) |
 | `kubectl` | any recent | [kubernetes.io](https://kubernetes.io/docs/tasks/tools/) |
 | `make` | any | system package manager |
 
 !!! note
-    The backend reads your current `kubeconfig` context (or the in-cluster service account if deployed as a pod). Make sure `kubectl get gitrepositories -A` works before starting.
+    The backend reads your current `kubeconfig` context (or the in-cluster service account if
+    deployed as a pod). Make sure `kubectl get gitrepositories -A` works before starting.
 
 ## Running the full stack
 
@@ -27,31 +28,29 @@ cd frontend && npm install && cd ..
 make run
 ```
 
-`make run` runs `go run main.go` and `npm run dev` in parallel. The frontend dev server proxies `/api/*` requests to `localhost:8080`.
-
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open [http://localhost:3000](http://localhost:3000).
 
 ## Running services individually
 
 ```bash
-# Backend only
-make run-backend
-
-# Frontend only
-make run-frontend
+make run-backend    # Go backend on :8080
+make run-frontend   # Next.js dev server on :3000
 ```
 
 ## Environment variables
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `CLUSTER_NAME` | `talos-tart-ha` | Name shown in the status ticker |
-| `KUBECONFIG` | `~/.kube/config` | Path to kubeconfig (standard) |
+| `CLUSTER_NAME` | `kubernetes` | Cluster name shown in the status ticker |
+| `KUBECONFIG` | `~/.kube/config` | Path to kubeconfig |
+| `BACKEND_URL` | _(auto-detected)_ | Override backend URL for the Next.js proxy |
 
 ## Hot reload
 
-The frontend (`npm run dev`) supports Next.js fast refresh — changes to `.tsx` files apply without restarting. The backend does not auto-reload; restart `make run-backend` after Go changes.
+- **Frontend** — Next.js fast refresh applies `.tsx` changes instantly.
+- **Backend** — does not auto-reload; restart `make run-backend` after Go changes.
 
 ## For more detail
 
-See the [Development setup](../contributing/dev-setup.md) page in the Contributing section, which covers linting, testing, and the full contributor workflow.
+See [Development Setup](../contributing/dev-setup.md) for linting, testing, and the full
+contributor workflow.

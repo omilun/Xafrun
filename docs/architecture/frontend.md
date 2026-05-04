@@ -1,99 +1,111 @@
-# Frontend: Two-screen UX + React Flow
+# Frontend Architecture
 
-The frontend is a **Next.js App Router** application with two primary screens (state-based, no URL routing for MVP).
+The Xafrun frontend is a **Next.js 15 (App Router)** application written in TypeScript.
+It renders an interactive dependency graph using **React Flow** with a **Dagre** layout engine.
 
-## Screen 1 — App List
+---
 
-The default view renders a responsive card grid of all Flux apps (`Kustomization` + `HelmRelease`). Top-level orchestrator resources are filtered out so only deployable units appear.
+## Two-screen UX
 
-**Key components:**
+### Screen 1 — App List (default)
 
-| Component | File | Role |
-|-----------|------|------|
-| `AppList` | `src/components/AppList.tsx` | Card grid, search/filter bar |
-| `AppCard` | `src/components/AppCard.tsx` | Single app card with status, kind badge, actions |
+The landing page shows a card grid of every `Kustomization` and `HelmRelease` in the cluster.
+Orchestrator Kustomizations (those whose inventory includes other Flux sources) are hidden;
+only leaf "deployable" apps appear.
 
-Data flows in via the SSE `EventSource` on `GET /api/events`. On every graph event, the app list re-renders from the updated node set.
+| Component | Role |
+|-----------|------|
+| `AppList.tsx` | Responsive card grid + filter toolbar |
+| `AppCard.tsx` | Single card: kind badge, name, namespace, health border colour, sync status |
+| `page.tsx` | Layout glue: holds `screen` state (`list` \| `detail`), passes `selectedApp` down |
 
-## Screen 2 — App Detail
+**Filter toolbar** (within `page.tsx`):
+- Search input (filters by app name)
+- Health filter chips — **All / Healthy / Unhealthy / Progressing** with live counts shown as `StatPill` badges
+- Logo + "Xafrun" header with "GitOps Visualization" subtitle
+- `ThemeToggle` (dark / light)
+- `CommandPalette` trigger (Cmd+K / Ctrl+K)
+- **Status ticker inline** — scrolls through active Flux resource statuses; turns red on errors
 
-Clicking a card switches state to the App Detail view for that specific app. This renders a full-screen React Flow graph with three node tiers: Source → App → inventory K8s resources.
+### Screen 2 — App Detail
 
-**Key components:**
+Clicking an app opens the full-screen dependency graph for that single app.
 
-| Component | File | Role |
-|-----------|------|------|
-| `AppDetail` | `src/components/AppDetail.tsx` | Header (back/breadcrumb) + React Flow canvas |
-| `ResourceNode` | `src/components/ResourceNode.tsx` | Custom node component (Flux or k8s variant) |
-
-### Inventory parsing
-
-Kustomization inventory entries follow the format `{namespace}_{name}_{group}_{kind}`. The frontend parses these into structured objects and renders them as child nodes:
-
-```typescript
-function parseInventoryId(id: string): { namespace: string; name: string; group: string; kind: string }
+```
+Source  ──►  App  ──►  K8s resource  (Deployment)
+                  ──►  K8s resource  (Service)
+                  ──►  K8s resource  (ConfigMap)
+                  ...
 ```
 
-### React Flow + dagre layout
+Layout direction: **TB (top-down)**. Edges: `smoothstep`. The TB layout uses Top/Bottom
+handles; the overview graph (all apps) uses LR layout with Left/Right handles.
 
-- Nodes are custom React components styled by their `status` field (Healthy/Progressing/Unhealthy/Unknown → green/yellow/red/grey border).
-- The layout is computed with **[dagre](https://github.com/dagrejs/dagre)** in `TB` (top-to-bottom) direction.
-- After each layout pass, `fitView()` is called to fit all nodes into the viewport.
-- Controls (zoom, minimap) are enabled via standard React Flow `<Controls>` and `<MiniMap>` components.
+| Component | Role |
+|-----------|------|
+| `AppDetail.tsx` | Header with back button + breadcrumb; renders `FluxTree` for the single app |
+| `FluxTree.tsx` | React Flow canvas; builds Dagre graph from node list; renders `ResourceNode` |
+| `ResourceNode.tsx` | Node card with colour-coded left stripe by resource category and health |
+
+---
 
 ## ResourceDrawer
 
-Clicking any node opens the `ResourceDrawer` — a tabbed side-panel docked to the right.
+Clicking any node (Flux or K8s resource) opens a tabbed side-panel anchored to the right edge.
 
-| Tab | Data source | Notes |
-|-----|-------------|-------|
-| Overview | Node data from the graph | Status, message, Reconcile / Suspend / Resume buttons |
-| YAML | `GET /api/yaml/:kind/:namespace/:name` | Read-only; `managedFields` stripped |
-| Events | `GET /api/k8sevents/:kind/:namespace/:name` | k8s event list |
-| Logs | `GET /api/logs/:namespace/:name` (SSE) | Pod logs only |
+| Tab | API call | Notes |
+|-----|----------|-------|
+| Overview | — | Status badge, health message, Reconcile/Suspend/Resume buttons, metadata |
+| YAML | `GET /api/yaml/:kind/:namespace/:name` | Syntax-highlighted read-only code block, managed-fields stripped |
+| Events | `GET /api/k8sevents/:kind/:namespace/:name` | Kubernetes event list: type / reason / message / age |
+| Logs | `GET /api/logs/:namespace/:name` (SSE) | Live pod log stream; only shown for Pod/Deployment nodes |
 
-## SSE connection (EventSource)
+---
 
-The frontend opens a native browser `EventSource` to `GET /api/events`:
+## Resource category colours
 
-```typescript
-const source = new EventSource('/api/events')
-source.addEventListener('graph', (e) => {
-  const graph = JSON.parse(e.data)
-  // update app list + current detail view
-})
-```
+K8s inventory nodes have a left accent stripe coloured by category:
 
-`EventSource` reconnects automatically on disconnect. No manual retry logic is needed.
+| Colour | Category | Kinds |
+|--------|----------|-------|
+| Blue | Workloads | Deployment, StatefulSet, DaemonSet, Job, CronJob, Pod |
+| Cyan | Services | Service, Endpoints |
+| Green | Networking | Ingress, IngressRoute, HTTPRoute, Gateway |
+| Yellow | Config | ConfigMap, Secret, PersistentVolumeClaim |
+| Pink | RBAC | ClusterRole, ClusterRoleBinding, Role, RoleBinding, ServiceAccount |
+| Teal | Cert-manager | Certificate, Issuer, ClusterIssuer |
 
-## Next.js proxy routes
+---
 
-All `/api/*` requests from the browser are handled by Next.js Route Handlers in `src/app/api/`. Each route proxies to the Go backend at `http://localhost:8080` (local dev) or `http://xafrun-backend:8080` (in-cluster).
+## API proxy
 
-```
-src/app/api/
-  events/route.ts                          → GET /api/events (SSE passthrough)
-  tree/route.ts                            → GET /api/tree
-  info/route.ts                            → GET /api/info
-  yaml/[kind]/[namespace]/[name]/route.ts  → GET /api/yaml/:kind/:namespace/:name
-  k8sevents/[kind]/[namespace]/[name]/route.ts → GET /api/k8sevents/:kind/:namespace/:name
-  logs/[namespace]/[name]/route.ts         → GET /api/logs/:namespace/:name (SSE passthrough)
-  reconcile/[kind]/[namespace]/[name]/route.ts → POST /api/reconcile
-  suspend/[kind]/[namespace]/[name]/route.ts   → POST /api/suspend
-  resume/[kind]/[namespace]/[name]/route.ts    → POST /api/resume
-```
+The Next.js frontend proxies all `/api/*` requests to the backend via a catch-all route
+(`src/app/api/[...path]/route.ts`). This avoids CORS issues and allows the frontend container
+to be deployed with only one exposed service.
 
-All write routes handle `204 No Content` explicitly — they do not attempt to parse an empty body.
+Backend URL resolution order:
+1. `BACKEND_URL` environment variable
+2. `http://xafrun-backend:8080` (in-cluster service name)
+3. `http://localhost:8080` (local dev fallback)
 
-## Status ticker
+---
 
-The `NewsTicker` component is docked to the bottom of the screen. It:
+## State management
 
-- Fetches cluster metadata once from `/api/info` on mount.
-- Checks the graph for any `Unhealthy` or `Progressing` nodes to set the bar colour.
-- Starts **closed by default** and auto-opens when any resource is unhealthy.
-- Scrolls a list of cluster info items (K8s version, Flux version, CNI, ingress, OS image) when healthy.
+Xafrun uses **React `useState`** only — no Redux, no Zustand, no Context for app state.
+All data is fetched by the backend SSE stream (`/api/events`) and stored in the top-level
+`page.tsx` component, then passed down as props. This keeps the dependency tree minimal and
+the codebase easy to follow.
 
-## CommandPalette
+---
 
-`Ctrl+K` / `Cmd+K` opens the command palette, which allows quick navigation to any app by name.
+## Key dependencies
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `react-flow` | 12.x | Graph canvas, pan/zoom, custom nodes |
+| `dagre` | 0.8.x | Automatic graph layout (TB and LR) |
+| `next` | 15.x | App Router, server components, API routes |
+| `tailwindcss` | 4.x | Utility-first styling |
+| `lucide-react` | latest | Icon set |
+| `eventsource` | — | SSE subscription to `/api/events` |

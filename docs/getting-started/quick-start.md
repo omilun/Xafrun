@@ -1,30 +1,16 @@
 # Quick Start
 
-Get Xafrun running against a local `kind` cluster in about 60 seconds.
+Get Xafrun running against any Kubernetes cluster with Flux installed.
 
 ## Prerequisites
 
-- [kind](https://kind.sigs.k8s.io/) and `kubectl` installed
+- A Kubernetes cluster (1.29+) with [Flux CD v2](https://fluxcd.io/flux/installation/) installed
+- `kubectl` configured and pointing at your cluster
 - [Helm](https://helm.sh) ≥ 3.12 **or** `kustomize` ≥ 5
 
 ---
 
-## 1. Create a local cluster
-
-```bash
-kind create cluster --name xafrun-demo
-```
-
-## 2. Install Flux CD
-
-```bash
-flux install
-```
-
-!!! note
-    If you don't have the `flux` CLI, install it with `brew install fluxcd/tap/flux` or follow the [official guide](https://fluxcd.io/flux/installation/).
-
-## 3. Install Xafrun
+## 1. Install Xafrun
 
 === "Helm"
 
@@ -36,20 +22,29 @@ flux install
 === "Kustomize"
 
     ```bash
-    kubectl apply -k github.com/omilun/Xafrun//deploy?ref=v0.1.6
+    kubectl apply -k github.com/omilun/Xafrun//deploy?ref=v0.1.8
     ```
 
-## 4. Port-forward and open
+=== "From source"
+
+    ```bash
+    git clone https://github.com/omilun/Xafrun.git
+    cd Xafrun
+    make run   # backend :8080 · frontend :3000
+    ```
+
+## 2. Open the dashboard
 
 ```bash
-kubectl port-forward -n xafrun svc/xafrun 8080:8080 3000:3000 &
+kubectl port-forward -n xafrun svc/xafrun-frontend 3000:80
 open http://localhost:3000
 ```
 
 !!! tip
-    The graph may appear empty if you haven't applied any Flux sources yet. Try adding a `GitRepository` and `Kustomization` to see the graph populate.
+    The graph may appear empty if you have no Flux sources yet. Add a `GitRepository` and
+    `Kustomization` to see the graph populate in real time.
 
-## 5. Create a sample source (optional)
+## 3. Create a sample source (optional)
 
 ```bash
 flux create source git podinfo \
@@ -64,7 +59,7 @@ flux create kustomization podinfo \
   --interval=5m
 ```
 
-Switch back to the browser — the graph updates in real time via SSE, no page refresh needed.
+Switch back to the browser — the graph updates via SSE, no page refresh needed.
 
 ---
 

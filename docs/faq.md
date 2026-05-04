@@ -10,7 +10,7 @@ See the [Comparison](comparison.md) page for a detailed breakdown.
 
 ## How does Xafrun compare to Weave GitOps?
 
-Weave GitOps is a mature, full-featured Flux UI with authentication, log streaming, and (in the enterprise version) multi-cluster support. Xafrun is narrower in scope and lighter weight — it focuses on the dependency graph and real-time health status. They are complementary rather than direct competitors. If you need OIDC and log streaming today, Weave GitOps is the better choice. If you want a fast, graph-first view, try Xafrun.
+Weave GitOps is a mature, full-featured Flux UI with authentication, log streaming, and (in the enterprise version) multi-cluster support. Xafrun is narrower in scope and lighter weight — it focuses on the dependency graph and real-time health status. They are complementary rather than direct competitors. If you need OIDC, multi-cluster support, or enterprise features today, Weave GitOps is the better choice. If you want a fast, graph-first view, try Xafrun.
 
 ---
 
