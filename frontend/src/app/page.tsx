@@ -154,7 +154,7 @@ export default function Home() {
       {!selectedApp && graph && (
         <div className="shrink-0 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 px-6 py-2.5 flex items-center gap-6 shadow-xs z-10">
           {/* Stats Section */}
-          <div className="flex items-center gap-6 shrink-0 border-r border-slate-100 dark:border-gray-800 pr-6">
+          <div className="flex items-center gap-6 shrink-0">
             <StatPill label="Total" value={counts.all} cls="text-slate-600 dark:text-gray-300" />
             <StatPill label="Healthy" value={counts.Healthy} cls="text-green-600 dark:text-green-400" />
             <StatPill label="Unhealthy" value={counts.Unhealthy} cls="text-red-600 dark:text-red-400" />
