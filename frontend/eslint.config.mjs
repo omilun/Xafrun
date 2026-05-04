@@ -13,6 +13,13 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // Pin React version so eslint-plugin-react doesn't call context.getFilename()
+  // (removed in ESLint 10) during auto-detection.
+  {
+    settings: {
+      react: { version: "19" },
+    },
+  },
 ]);
 
 export default eslintConfig;

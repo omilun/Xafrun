@@ -8,7 +8,6 @@ import ReactFlow, {
   Node,
   Edge,
   MarkerType,
-  Position,
   ReactFlowInstance,
 } from 'reactflow';
 import 'reactflow/dist/style.css';
