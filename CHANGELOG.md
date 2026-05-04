@@ -7,6 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-05-04
+
+### Changed
+- **NewsTicker** — inline mode redesigned as accordion: collapsed state shows only a
+  colour-coded TowerControl icon (green = healthy, red = error); clicking expands a panel
+  with full error details or the cluster info grid.
+- **Toolbar** — StatPill total/healthy/unhealthy counters removed; filter chips already
+  display live counts, making the pills redundant.
+
+### Fixed
+- ESLint 10 compatibility: set `settings.react.version = '19'` in `eslint.config.mjs` so
+  `eslint-plugin-react` does not call `context.getFilename()` (removed in ESLint 10) during
+  React version auto-detection.
+- Removed unused `Position` import in `FluxTree.tsx`.
+
+## [0.2.0] - 2026-05-01
+
+### Changed
+- **Graph nodes** redesigned — clean rectangular cards; border colour = health status
+  (green=ready, red=error, amber=progressing, grey=unknown); TYPE label uppercase and bold;
+  8 px status dot top-right; no colour bar.
+- **FluxTree layout** tuned: `ranksep 220`, `nodesep 100`, `NODE_WIDTH 260`, `NODE_HEIGHT 80`.
+- **Cluster info** fully generic — CNI version scanned from DaemonSets cluster-wide
+  (Cilium, Calico, Flannel, Weave, Canal, kube-router); ingress controller detected from
+  Deployments and DaemonSets (nginx/traefik/gateway/istio/contour/kong/envoy);
+  OS image from `NodeInfo.OSImage` (works on Talos, Ubuntu, Bottlerocket, etc.).
+- Default `clusterName` changed from a hardcoded value to `"kubernetes"`.
+
 ## [0.1.8] - 2026-05-04
 
 ### Added
@@ -116,7 +144,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - REST endpoints `/api/tree`, `/api/info`.
 - Status ticker with Kubernetes, Flux, CNI, and OS version metadata.
 
-[Unreleased]: https://github.com/omilun/Xafrun/compare/v0.1.8...HEAD
+[Unreleased]: https://github.com/omilun/Xafrun/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/omilun/Xafrun/compare/v0.2.0...v0.2.1
+[0.2.0]: https://github.com/omilun/Xafrun/compare/v0.1.8...v0.2.0
 [0.1.8]: https://github.com/omilun/Xafrun/compare/v0.1.7...v0.1.8
 [0.1.7]: https://github.com/omilun/Xafrun/compare/v0.1.6...v0.1.7
 [0.1.6]: https://github.com/omilun/Xafrun/compare/v0.1.5...v0.1.6
