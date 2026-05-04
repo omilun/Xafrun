@@ -162,7 +162,8 @@ func (w *Watcher) rebuild(ctx context.Context) {
 		Edges: []models.Edge{},
 	}
 
-	sourceByRef := map[sourceKey]string{}
+	sourceByRef  := map[sourceKey]string{}
+	sourceURLByRef := map[sourceKey]string{} // key → source URL (for display)
 
 	addSourceNode := func(uid, name, ns, kind string, conditions []metav1.Condition, revision string, suspended bool, srcRef *sourceRef) {
 		graph.Nodes = append(graph.Nodes, models.Node{
@@ -205,6 +206,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				rev = r.Status.Artifact.Revision
 			}
 			addSourceNode(string(r.UID), r.Name, r.Namespace, "GitRepository", r.Status.Conditions, rev, r.Spec.Suspend, nil)
+			sourceURLByRef[sourceKey{kind: "GitRepository", namespace: r.Namespace, name: r.Name}] = r.Spec.URL
 		}
 	} else {
 		slog.Debug("could not list GitRepositories", "err", err.Error())
@@ -219,6 +221,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				rev = r.Status.Artifact.Revision
 			}
 			addSourceNode(string(r.UID), r.Name, r.Namespace, "OCIRepository", r.Status.Conditions, rev, r.Spec.Suspend, nil)
+			sourceURLByRef[sourceKey{kind: "OCIRepository", namespace: r.Namespace, name: r.Name}] = r.Spec.URL
 		}
 	} else {
 		slog.Debug("could not list OCIRepositories", "err", err.Error())
@@ -233,6 +236,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				rev = r.Status.Artifact.Revision
 			}
 			addSourceNode(string(r.UID), r.Name, r.Namespace, "Bucket", r.Status.Conditions, rev, r.Spec.Suspend, nil)
+			sourceURLByRef[sourceKey{kind: "Bucket", namespace: r.Namespace, name: r.Name}] = r.Spec.BucketName
 		}
 	} else {
 		slog.Debug("could not list Buckets", "err", err.Error())
@@ -247,6 +251,7 @@ func (w *Watcher) rebuild(ctx context.Context) {
 				rev = r.Status.Artifact.Revision
 			}
 			addSourceNode(string(r.UID), r.Name, r.Namespace, "HelmRepository", r.Status.Conditions, rev, r.Spec.Suspend, nil)
+			sourceURLByRef[sourceKey{kind: "HelmRepository", namespace: r.Namespace, name: r.Name}] = r.Spec.URL
 		}
 	} else {
 		slog.Debug("could not list HelmRepositories", "err", err.Error())
@@ -299,12 +304,17 @@ func (w *Watcher) rebuild(ctx context.Context) {
 					node.Inventory = append(node.Inventory, entry.ID)
 				}
 			}
-			graph.Nodes = append(graph.Nodes, node)
-
+			// Resolve the actual source URL (e.g. https://github.com/org/repo)
 			srcNS := ks.Spec.SourceRef.Namespace
 			if srcNS == "" {
 				srcNS = ks.Namespace
 			}
+			urlKey := sourceKey{kind: ks.Spec.SourceRef.Kind, namespace: srcNS, name: ks.Spec.SourceRef.Name}
+			if url, ok := sourceURLByRef[urlKey]; ok {
+				node.SourceURL = url
+			}
+			graph.Nodes = append(graph.Nodes, node)
+
 			key := sourceKey{kind: ks.Spec.SourceRef.Kind, namespace: srcNS, name: ks.Spec.SourceRef.Name}
 			if srcUID, ok := sourceByRef[key]; ok {
 				graph.Edges = append(graph.Edges, models.Edge{
@@ -336,6 +346,14 @@ func (w *Watcher) rebuild(ctx context.Context) {
 			if hr.Spec.Chart != nil {
 				node.SourceRef = fmt.Sprintf("%s/%s", hr.Spec.Chart.Spec.SourceRef.Kind, hr.Spec.Chart.Spec.SourceRef.Name)
 				node.ChartName = hr.Spec.Chart.Spec.Chart
+				// Resolve source URL
+				hrSrcNS := hr.Spec.Chart.Spec.SourceRef.Namespace
+				if hrSrcNS == "" {
+					hrSrcNS = hr.Namespace
+				}
+				if url, ok := sourceURLByRef[sourceKey{kind: hr.Spec.Chart.Spec.SourceRef.Kind, namespace: hrSrcNS, name: hr.Spec.Chart.Spec.SourceRef.Name}]; ok {
+					node.SourceURL = url
+				}
 			}
 			
 			// Link to HelmChart or direct source

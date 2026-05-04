@@ -28,6 +28,7 @@ export interface FluxNode {
   suspended?: boolean;
   message?: string;
   sourceRef?: string;
+  sourceURL?: string;
   revision?: string;
   inventory?: string[];
   chartName?: string;

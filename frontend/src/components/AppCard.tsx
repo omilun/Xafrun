@@ -42,6 +42,21 @@ export function AppCard({ node, onClick }: AppCardProps) {
         : node.revision ?? null)
     : null;
 
+  // For Kustomizations, show the resolved URL (stripped of https://) + short SHA
+  // e.g. "github.com/org/repo" + revision "main@sha1:abc1234..." → "github.com/org/repo @ abc1234"
+  const ksSourceLabel = node.kind === 'Kustomization'
+    ? (() => {
+        const url = node.sourceURL
+          ? node.sourceURL.replace(/^https?:\/\//, '')
+          : node.sourceRef ?? null;
+        if (!url) return null;
+        // Extract short SHA from "main@sha1:abcdef1234567..." or "sha:abcdef..."
+        const shaMatch = node.revision?.match(/sha1?:([0-9a-f]{7})/i);
+        const shortSha = shaMatch ? shaMatch[1] : null;
+        return shortSha ? `${url} @ ${shortSha}` : url;
+      })()
+    : null;
+
   return (
     <button
       onClick={onClick}
@@ -70,12 +85,19 @@ export function AppCard({ node, onClick }: AppCardProps) {
         </div>
       </div>
 
-      {/* Chart label (HelmRelease) or source ref (Kustomization) */}
+      {/* Chart label (HelmRelease) or resolved source URL (Kustomization) */}
       {chartLabel ? (
         <div className="flex items-start gap-1.5">
           <Layers className="w-3 h-3 text-purple-400 mt-0.5 shrink-0" />
           <span className="text-[10px] text-purple-500 dark:text-purple-400 font-mono truncate">
             {chartLabel}
+          </span>
+        </div>
+      ) : ksSourceLabel ? (
+        <div className="flex items-start gap-1.5">
+          <GitBranch className="w-3 h-3 text-blue-400 mt-0.5 shrink-0" />
+          <span className="text-[10px] text-blue-500 dark:text-blue-400 font-mono truncate">
+            {ksSourceLabel}
           </span>
         </div>
       ) : node.sourceRef ? (

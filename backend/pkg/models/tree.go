@@ -39,6 +39,7 @@ type Node struct {
 	Message   string       `json:"message,omitempty"`
 	// Flux-specific details
 	SourceRef  string   `json:"sourceRef,omitempty"`  // e.g. "GitRepository/flux-system"
+	SourceURL  string   `json:"sourceURL,omitempty"`  // resolved URL of the source (e.g. "https://github.com/org/repo")
 	Revision   string   `json:"revision,omitempty"`   // last applied revision / commit
 	Inventory  []string `json:"inventory,omitempty"`  // managed object IDs
 	ChartName  string   `json:"chartName,omitempty"`  // HelmRelease chart name

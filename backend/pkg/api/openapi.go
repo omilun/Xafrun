@@ -177,6 +177,7 @@ const openAPISpec = `{
           "status": {"type": "string", "enum": ["Healthy","Unhealthy","Progressing","Unknown"]},
           "message": {"type": "string"},
           "sourceRef": {"type": "string"},
+          "sourceURL": {"type": "string"},
           "revision": {"type": "string"},
           "inventory": {"type": "array", "items": {"type": "string"}}
         }
