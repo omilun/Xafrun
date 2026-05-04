@@ -14,14 +14,6 @@ import { FluxGraph, FluxNode, ClusterInfo, APP_KINDS, isOrchestratorKustomizatio
 
 type ConnStatus = 'connecting' | 'live' | 'error';
 
-function StatPill({ label, value, cls }: { label: string; value: number; cls: string }) {
-  return (
-    <div className="flex flex-col items-center leading-none">
-      <span className={`text-sm font-bold tabular-nums ${cls}`}>{value}</span>
-      <span className="text-[9px] font-medium uppercase tracking-widest text-slate-400 dark:text-gray-500 mt-0.5">{label}</span>
-    </div>
-  );
-}
 type HealthFilter = 'all' | 'Healthy' | 'Unhealthy' | 'Progressing';
 
 const FILTER_CONFIG: { key: HealthFilter; label: string; dot: string; text: string; active: string }[] = [
@@ -153,14 +145,6 @@ export default function Home() {
 
       {!selectedApp && graph && (
         <div className="shrink-0 bg-white dark:bg-gray-900 border-b border-slate-200 dark:border-gray-700 px-6 py-2.5 flex items-center gap-6 shadow-xs z-10">
-          {/* Stats Section */}
-          <div className="flex items-center gap-6 shrink-0">
-            <StatPill label="Total" value={counts.all} cls="text-slate-600 dark:text-gray-300" />
-            <StatPill label="Healthy" value={counts.Healthy} cls="text-green-600 dark:text-green-400" />
-            <StatPill label="Unhealthy" value={counts.Unhealthy} cls="text-red-600 dark:text-red-400" />
-            <StatPill label="Progressing" value={counts.Progressing} cls="text-blue-600 dark:text-blue-400" />
-          </div>
-
           {/* Search */}
           <div className="relative w-64 shrink-0">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
