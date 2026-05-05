@@ -16,6 +16,6 @@ commonLabels:
 
 images:
   - name: ghcr.io/omilun/xafrun-backend
-    newTag: "0.1.0"
+    newTag: "0.2.1"
   - name: ghcr.io/omilun/xafrun-frontend
-    newTag: "0.1.0"
+    newTag: "0.2.1"
