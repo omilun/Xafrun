@@ -104,12 +104,18 @@ export default function Home() {
             onClick={() => { setSelectedApp(null); clearFilters(); }}
             className="flex items-center gap-3.5 hover:opacity-80 transition-opacity shrink-0"
           >
-            <div className="relative w-9 h-9 overflow-hidden rounded-lg shadow-sm border border-slate-100 dark:border-gray-800 bg-white">
+            <div className="relative w-9 h-9 overflow-hidden rounded-lg shadow-sm border border-slate-100 dark:border-gray-700 bg-white dark:bg-gray-800">
               <Image 
                 src="/logo.png" 
                 alt="Xafrun Logo" 
                 fill
-                className="object-contain p-0.5"
+                className="object-contain p-0.5 block dark:hidden"
+              />
+              <Image 
+                src="/logo-bw.png" 
+                alt="Xafrun Logo" 
+                fill
+                className="object-contain p-0.5 hidden dark:block dark:invert"
               />
             </div>
             <div className="text-left leading-none">

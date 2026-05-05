@@ -1,8 +1,5 @@
-'use client';
-
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
-import { ToastProvider } from '@/components/Toast';
+import type { Metadata } from 'next';
+import Providers from './Providers';
 import './globals.css';
 
 const themeInitScript = `
@@ -16,20 +13,27 @@ const themeInitScript = `
 })();
 `;
 
+export const metadata: Metadata = {
+  title: 'Xafrun',
+  description: 'Real-time GitOps visualization dashboard for Flux CD',
+  icons: {
+    icon: [
+      { url: '/icon.png', type: 'image/png' },
+    ],
+    apple: '/icon.png',
+  },
+};
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [queryClient] = useState(() => new QueryClient());
-
   return (
     <html lang="en">
       <body>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
-        <QueryClientProvider client={queryClient}>
-          <ToastProvider>{children}</ToastProvider>
-        </QueryClientProvider>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
