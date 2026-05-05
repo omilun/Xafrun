@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.1] - 2026-05-04
 
+### Added
+- **Kustomization source URL** — AppCard for Kustomizations now resolves the upstream
+  `GitRepository`/`OCIRepository`/`HelmRepository` `spec.url` and displays
+  `github.com/org/repo @ abc1234` (short 7-char SHA) instead of the opaque
+  `GitRepository/flux-system` object reference.
+
 ### Changed
 - **NewsTicker** — inline mode redesigned as accordion: collapsed state shows only a
   colour-coded TowerControl icon (green = healthy, red = error); clicking expands a panel
