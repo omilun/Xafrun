@@ -59,12 +59,24 @@ export default function Home() {
 
   const connect = useCallback(() => {
     fetch('/api/proxy/tree').then((r) => r.json()).then((data) => setGraph(data)).catch(() => {});
-    const es = new EventSource('/api/proxy/events');
+
+    // Use the dedicated SSE streaming route (not the generic buffering proxy).
+    const es = new EventSource('/api/events');
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+
     es.addEventListener('graph', (e: MessageEvent) => {
-      try { setGraph(JSON.parse(e.data)); setStatus('live'); } catch { /* ignore */ }
+      try { setGraph(JSON.parse(e.data)); setStatus('live'); setError(false); } catch { /* ignore */ }
     });
-    es.onerror = () => { setStatus('error'); setError(true); es.close(); };
-    return () => es.close();
+    es.onerror = () => {
+      setStatus('error');
+      es.close();
+      // Reconnect after 3 s so the UI self-heals without a page refresh.
+      reconnectTimer = setTimeout(() => connect(), 3000);
+    };
+    return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      es.close();
+    };
   }, []);
 
   useEffect(() => { const cleanup = connect(); return cleanup; }, [connect]);
@@ -109,12 +121,14 @@ export default function Home() {
                 src="/logo.png" 
                 alt="Xafrun Logo" 
                 fill
+                unoptimized
                 className="object-contain p-0.5 block dark:hidden"
               />
               <Image 
                 src="/logo-bw.png" 
                 alt="Xafrun Logo" 
                 fill
+                unoptimized
                 className="object-contain p-0.5 hidden dark:block dark:invert"
               />
             </div>
