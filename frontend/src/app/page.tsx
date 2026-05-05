@@ -33,7 +33,9 @@ export default function Home() {
   const [search, setSearch]           = useState('');
   const [healthFilter, setHealthFilter] = useState<HealthFilter>('all');
 
-  const rfInstanceRef = useRef<ReactFlowInstance | null>(null);
+  const rfInstanceRef  = useRef<ReactFlowInstance | null>(null);
+  // Stable ref so the onerror reconnect closure never captures a stale connect.
+  const connectRef = useRef<() => () => void>(null!);
 
   const apps = useMemo(() => {
     if (!graph) return [];
@@ -70,8 +72,8 @@ export default function Home() {
     es.onerror = () => {
       setStatus('error');
       es.close();
-      // Reconnect after 3 s so the UI self-heals without a page refresh.
-      reconnectTimer = setTimeout(() => connect(), 3000);
+      // Reconnect after 3 s — call through the ref to avoid TDZ / stale closure.
+      reconnectTimer = setTimeout(() => connectRef.current(), 3000);
     };
     return () => {
       if (reconnectTimer) clearTimeout(reconnectTimer);
@@ -79,6 +81,7 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => { connectRef.current = connect; }, [connect]);
   useEffect(() => { const cleanup = connect(); return cleanup; }, [connect]);
 
   useEffect(() => {
