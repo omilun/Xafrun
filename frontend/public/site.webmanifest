@@ -1,0 +1,17 @@
+{
+  "name": "Xafrun",
+  "short_name": "Xafrun",
+  "description": "Real-time GitOps visualization dashboard for Flux CD",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

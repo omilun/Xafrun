@@ -18,9 +18,17 @@ export const metadata: Metadata = {
   description: 'Real-time GitOps visualization dashboard for Flux CD',
   icons: {
     icon: [
-      { url: '/icon.png', type: 'image/png' },
+      { url: '/icon.png', type: 'image/png', sizes: '32x32' },
     ],
-    apple: '/icon.png',
+    apple: [
+      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+  },
+  manifest: '/site.webmanifest',
+  openGraph: {
+    title: 'Xafrun',
+    description: 'Real-time GitOps visualization dashboard for Flux CD',
+    images: [{ url: '/logo-512.png', width: 512, height: 512 }],
   },
 };
 
